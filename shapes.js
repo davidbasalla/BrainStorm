@@ -33,7 +33,7 @@ function Shape(x, y, shape, text) {
 
     var connectWidth = 10;
     this.connector = new Connector(this.x + this.w/2.0 - connectWidth/2.0, 
-				   this.y + this.h - connectWidth/2.0, 
+				   this.y + this.h, 
 				   connectWidth);
 
 
@@ -190,22 +190,6 @@ Connector.prototype.contains = function(mx, my) {
 }
 
 
-Connector.prototype.drawLine = function(ctx) {
-
-    ctx.beginPath();
-    ctx.moveTo(this.x + this.w/2.0, this.y + this.w/2.0);
-    ctx.lineTo(this.targetX, this.targetY);
-    ctx.stroke();
-    ctx.closePath();
-}
-
-
-Connector.prototype.resetTarget = function() {
-
-    this.targetX = this.x;
-    this.targetY = this.y;
-}
-
 
 
 
@@ -228,17 +212,21 @@ function Connection(origShape, destShape){
 
 
 
-Connection.prototype.drawLine = function(ctx){
+Connection.prototype.draw = function(ctx){
+
+    console.log('Connection.draw()');
+    console.log(this.origShape);
+    console.log(this.destShape);
 
     /* draw a line either between two shapes or between the original shape
        and a target position */
 
-    origX = this.origShape.connector.x + this.origShape.connector.w/2.0;
-    origY = this.origShape.connector.y + this.origShape.connector.w/2.0;
+    origX = this.origShape.x + this.origShape.w/2.0;
+    origY = this.origShape.y + this.origShape.h/2.0;
 
     if (this.destShape){
-	destX = this.destShape.x;
-	destY = this.destShape.y;
+	destX = this.destShape.x + this.destShape.w/2.0;
+	destY = this.destShape.y  + this.destShape.h/2.0;
     }
     else {
 	destX = this.targetX;
@@ -247,7 +235,7 @@ Connection.prototype.drawLine = function(ctx){
 
     ctx.beginPath();
     ctx.moveTo(origX, origY)
-    ctx.lineTo(this.targetX, this.targetY);
+    ctx.lineTo(destX, destY);
     ctx.stroke();
     ctx.closePath();
 
@@ -299,6 +287,7 @@ function CanvasState(canvas) {
     
     this.valid = false; // when set to false, the canvas will redraw everything
     this.shapes = [];  // the collection of things to be drawn
+    this.connections = [];  // the collection of things to be drawn
     this.dragging = false; // Keep track of when we are dragging
     // the current selected object. In the future we could turn this into an array for multiple selection
     this.selection = null;
@@ -341,40 +330,26 @@ function CanvasState(canvas) {
 	    return;
 	}
 
-	    /*
-	var mouse = myState.getMouse(e);
-	var mx = mouse.x;
-	var my = mouse.y;
+
 	var shapes = myState.shapes;
 	var l = shapes.length;
 	for (var i = l-1; i >= 0; i--) {
 
-
 	    //check the connectors first
 	    if (shapes[i].connector.contains(mx, my)){
 
+		console.log('found connector');
+		
 		var mySel = new Connection(shapes[i]);
 		myState.connectionDragging = true;
 		myState.connectionSelection = mySel;
 		myState.valid = false;
 		return;
 	    }
+	    
+	}
 
 
-
-	    else if (shapes[i].contains(mx, my)) {
-		var mySel = shapes[i];
-		// Keep track of where in the object we clicked
-		// so we can move it smoothly (see mousemove)
-		myState.dragoffx = mx - mySel.x;
-		myState.dragoffy = my - mySel.y;
-		myState.dragging = true;
-		myState.selection = mySel;
-		myState.valid = false;
-		return;
-	    }
-	   }
-	   */
 
 	// havent returned means we have failed to select anything.
 	// If there was an object selected, we deselect it
@@ -424,10 +399,10 @@ function CanvasState(canvas) {
 		myState.valid = false;
 	    }
 	}
-	/*
+
 	if (myState.connectionDragging){
 	    var mouse = myState.getMouse(e);
-	    //myState.connectorSelection.drawLine(mouse.x, mouse.y, this.ctx);
+
 	    myState.connectionSelection.setTarget(mouse.x, mouse.y);
 
 	    //need to check here if another shape is detected underneath
@@ -435,8 +410,7 @@ function CanvasState(canvas) {
 	    myState.valid = false; // Something's dragging so we must redraw
 	    }
 
-	else */ 
-	if (myState.dragging){
+	else if (myState.dragging){
 	    // We don't want to drag the object by its top-left corner, we want to drag it
 	    // from where we clicked. Thats why we saved the offset and use it here
 	    
@@ -466,8 +440,22 @@ function CanvasState(canvas) {
 	//myState.selection = null;
 
 	//reset the connector
-	if (myState.connectionSelection)
+	if (myState.connectionSelection){
+
+	    if (myState.hoverSelection){
+		console.log('make connection');
+		myState.connectionSelection.destShape = myState.hoverSelection;
+
+		myState.connections.push(myState.connectionSelection); 
+
+	    }
+
+
 	    myState.connectionSelection.resetTarget();
+	}
+
+
+
 	myState.connectionSelection = null;
 
 	myState.valid = false; // Something's dragging so we must redraw
@@ -507,10 +495,23 @@ CanvasState.prototype.draw = function() {
     if (!this.valid) {
 	var ctx = this.ctx;
 	var shapes = this.shapes;
+	var connections = this.connections;
 	this.clear();
 	
 	// ** Add stuff you want drawn in the background all the time here **
 	
+	// draw all shapes
+	var l = connections.length;
+	for (var i = 0; i < l; i++) {
+	    var con = connections[i];
+	    // We can skip the drawing of elements that have moved off the screen:
+	    //if (con.x > this.width || shape.y > this.height ||
+	    //shape.x + shape.w < 0 || shape.y + shape.h < 0) continue;
+	    connections[i].draw(ctx);
+	}
+
+
+
 	// draw all shapes
 	var l = shapes.length;
 	for (var i = 0; i < l; i++) {
@@ -520,6 +521,11 @@ CanvasState.prototype.draw = function() {
 		shape.x + shape.w < 0 || shape.y + shape.h < 0) continue;
 	    shapes[i].draw(ctx);
 	}
+
+
+
+
+	
 	
 	// draw selection
 	// right now this is just a stroke along the edge of the selected Shape
@@ -578,7 +584,7 @@ CanvasState.prototype.draw = function() {
 
 	if (this.connectionSelection != null) {
 	    var mySel = this.connectionSelection;
-	    mySel.drawLine(ctx);
+	    mySel.draw(ctx);
 	}
 
 
