@@ -36,8 +36,6 @@ function Shape(x, y, shape, text) {
 				   this.y + this.h - connectWidth/2.0, 
 				   connectWidth);
 
-    console.log(this.connector)
-
 
 }
 
@@ -213,7 +211,8 @@ Connector.prototype.resetTarget = function() {
 
 function Connection(origShape, destShape){
 
-    console.log('connection');
+    /* class for keeping track of connections,
+       kept independent to avoid recursive objects */
 
     //original shape has to be there
     this.origShape = origShape;
@@ -230,6 +229,9 @@ function Connection(origShape, destShape){
 
 
 Connection.prototype.drawLine = function(ctx){
+
+    /* draw a line either between two shapes or between the original shape
+       and a target position */
 
     origX = this.origShape.connector.x + this.origShape.connector.w/2.0;
     origY = this.origShape.connector.y + this.origShape.connector.w/2.0;
@@ -248,7 +250,6 @@ Connection.prototype.drawLine = function(ctx){
     ctx.lineTo(this.targetX, this.targetY);
     ctx.stroke();
     ctx.closePath();
-
 
 }
 
@@ -301,6 +302,7 @@ function CanvasState(canvas) {
     this.dragging = false; // Keep track of when we are dragging
     // the current selected object. In the future we could turn this into an array for multiple selection
     this.selection = null;
+    this.hoverSelection = null;
     this.connectionSelection = null;
 
     this.dragoffx = 0; // See mousedown and mousemove events for explanation
@@ -320,6 +322,26 @@ function CanvasState(canvas) {
     // Up, down, and move are for dragging
 
     canvas.addEventListener('mousedown', function(e) {
+
+	var mouse = myState.getMouse(e);
+	var mx = mouse.x;
+	var my = mouse.y;
+
+
+	if (myState.hoverSelection){
+
+	    mySel = myState.hoverSelection;
+	    myState.selection = mySel;
+
+	    myState.dragoffx = mx - mySel.x;
+	    myState.dragoffy = my - mySel.y;
+
+	    myState.dragging = true;
+	    myState.valid = false;
+	    return;
+	}
+
+	    /*
 	var mouse = myState.getMouse(e);
 	var mx = mouse.x;
 	var my = mouse.y;
@@ -351,19 +373,58 @@ function CanvasState(canvas) {
 		myState.valid = false;
 		return;
 	    }
-	}
+	   }
+	   */
+
 	// havent returned means we have failed to select anything.
 	// If there was an object selected, we deselect it
+
 	if (myState.selection) {
-	    myState.selection = null;
-	    myState.valid = false; // Need to clear the old selection border
-	}
+	    if (!myState.selection.contains(mx, my)){
+
+		myState.selection = null;
+		myState.valid = false; // Need to clear the old selection border
+		}
+	    }
     }, true);
 
     canvas.addEventListener('mousemove', function(e) {
 
 	//detect shapes here
+	//if shape found, set it to selected
 
+	var mouse = myState.getMouse(e);
+	var mx = mouse.x;
+	var my = mouse.y;
+	
+	if (!myState.hoverSelection){
+
+	    var shapes = myState.shapes;
+	    var l = shapes.length;
+	    for (var i = l-1; i >= 0; i--) {
+		
+		if (shapes[i].contains(mx, my)) {
+		    // Keep track of where in the object we clicked
+		    // so we can move it smoothly (see mousemove)
+
+		    var mySel = shapes[i];		    
+		    myState.hoverSelection = mySel;
+		    myState.valid = false;
+		    
+		    return;
+		}
+	    }
+	}
+	//myState.selection = null;
+
+	//check that current object still in mouse range
+	else if (myState.hoverSelection){
+	    if (!myState.hoverSelection.contains(mx, my)){
+		myState.hoverSelection = null;
+		myState.valid = false;
+	    }
+	}
+	/*
 	if (myState.connectionDragging){
 	    var mouse = myState.getMouse(e);
 	    //myState.connectorSelection.drawLine(mouse.x, mouse.y, this.ctx);
@@ -374,8 +435,8 @@ function CanvasState(canvas) {
 	    myState.valid = false; // Something's dragging so we must redraw
 	    }
 
-	else if (myState.dragging){
-	    var mouse = myState.getMouse(e);
+	else */ 
+	if (myState.dragging){
 	    // We don't want to drag the object by its top-left corner, we want to drag it
 	    // from where we clicked. Thats why we saved the offset and use it here
 	    
@@ -388,6 +449,7 @@ function CanvasState(canvas) {
 	    //myState.selection.y = mouse.y - myState.dragoffy;   
 	    myState.valid = false; // Something's dragging so we must redraw
 	}
+
     }, true);
 
     canvas.addEventListener('mouseup', function(e) {
@@ -401,7 +463,7 @@ function CanvasState(canvas) {
 	myState.connectionDragging = false;
 
 	//need to clear the selected status and stop drawing the line
-	myState.selection = null;
+	//myState.selection = null;
 
 	//reset the connector
 	if (myState.connectionSelection)
@@ -421,6 +483,8 @@ function CanvasState(canvas) {
     // **** Options! ****
     
     this.selectionColor = '#CC0000';
+    this.hoverColor = '#FF5555';
+    this.hoverSelectedColor = '#EE4444';
     this.selectionWidth = 2;  
     this.interval = 15;
     setInterval(function() { myState.draw(); }, myState.interval);
@@ -465,6 +529,8 @@ CanvasState.prototype.draw = function() {
 	    ctx.lineWidth = 5;
 	    var mySel = this.selection;
 	    
+	    //SHOULD MOVE THIS INTO A FUNCTION OF THE OBJECT
+
 	    if (mySel.shape === 'square')
 		ctx.strokeRect(mySel.x,mySel.y,mySel.w,mySel.h);
 	    else if (mySel.shape === 'circle'){
@@ -476,6 +542,37 @@ CanvasState.prototype.draw = function() {
 	    
 	    
 	}
+
+	// draw HOVER selection
+	// right now this is just a stroke along the edge of the selected Shape
+	if (this.hoverSelection != null) {
+
+	    ctx.strokeStyle = this.hoverColor;	    
+	    if (this.selection){
+		if (this.selection === this.hoverSelection)
+		    ctx.strokeStyle = this.hoverSelectedColor;
+	    }
+
+	    ctx.lineWidth = this.selectionWidth;
+	    ctx.lineWidth = 5;
+	    var mySel = this.hoverSelection;
+	    
+	    //SHOULD MOVE THIS INTO A FUNCTION OF THE OBJECT
+
+	    if (mySel.shape === 'square')
+		ctx.strokeRect(mySel.x,mySel.y,mySel.w,mySel.h);
+	    else if (mySel.shape === 'circle'){
+		ctx.beginPath();
+		ctx.arc(mySel.x, mySel.y, mySel.w/2, 0, 2 * Math.PI, false);
+		ctx.stroke();
+		ctx.closePath();
+	    }
+	    
+	    
+	}
+
+
+
 
 	//draw connector lines
 

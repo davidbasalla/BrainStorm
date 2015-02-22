@@ -30,3 +30,7 @@ each node needs to store an array of connected nodes?
 - should rework the code, so that when create a drag, a Connection
   object gets created!! Gets its position from Connector...?
 
+
+
+- should bring in concept of highlighted VS selected
+
