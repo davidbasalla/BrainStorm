@@ -3,3 +3,30 @@
 - mark as hovered when mousing over
 - get rid of current markation
 - create node point
+
+
+
+==== how to store connections? ====
+
+each node needs to store an array of connected nodes?
+- issue with repition? doubling up of data...?
+- important of directionality of connection?
+  - would probably cause a few issues...
+
+   n -----> n
+       &
+   n <----- n
+
+       VS
+
+   n <----> n
+
+   Bottom one is probably the one to go with...
+
+   
+- issue that you cant store a pointer to similar class within an
+  object??
+
+- should rework the code, so that when create a drag, a Connection
+  object gets created!! Gets its position from Connector...?
+
