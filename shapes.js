@@ -19,8 +19,8 @@ function Shape(x, y, shape, text) {
 
     this.text = text || "testText";
     this.shape = shape || "square";
-    this.fill = '#CCCCCC';
-    this.lineWidth = 2;
+    this.fill = '#EEEEEE';
+    this.lineWidth = 1;
 
     if(this.shape === 'square'){
 	this.w = 100;
@@ -65,6 +65,38 @@ Shape.prototype.move = function(x, y){
 }
 
 
+Shape.prototype.highlight = function(ctx, mode) {
+
+    if (this.shape === "square"){
+
+	var minX = this.x;
+	var minY = this.y;
+	var maxX = this.x + this.w;
+	var maxY = this.y + this.h;
+	var offset = 10;
+
+	if (mode === "hover")
+	    ctx.strokeStyle = '#FF0000';
+	else
+	    ctx.strokeStyle = '#00FF00';
+
+	ctx.beginPath();
+	ctx.moveTo(minX + offset, minY);
+	ctx.lineTo(maxX - offset, minY);
+	ctx.quadraticCurveTo(maxX, minY, maxX, minY + offset);
+	ctx.lineTo(maxX, maxY - offset);
+	ctx.quadraticCurveTo(maxX, maxY, maxX - offset, maxY);
+	ctx.lineTo(minX + offset, maxY);
+	ctx.quadraticCurveTo(minX, maxY, minX, maxY - offset);
+	ctx.lineTo(minX, minY + offset);
+	ctx.quadraticCurveTo(minX, minY, minX + offset, minY);
+
+	ctx.stroke();
+	ctx.closePath();
+    }
+}
+
+
 
 
 
@@ -75,12 +107,29 @@ Shape.prototype.draw = function(ctx) {
 	
 	ctx.save();
 
+	//ctx.rect(this.x, this.y, this.w, this.h);
+
+	var minX = this.x;
+	var minY = this.y;
+	var maxX = this.x + this.w;
+	var maxY = this.y + this.h;
+	var offset = 10;
+
 	ctx.beginPath();
-	ctx.rect(this.x, this.y, this.w, this.h);
+	ctx.moveTo(minX + offset, minY);
+	ctx.lineTo(maxX - offset, minY);
+	ctx.quadraticCurveTo(maxX, minY, maxX, minY + offset);
+	ctx.lineTo(maxX, maxY - offset);
+	ctx.quadraticCurveTo(maxX, maxY, maxX - offset, maxY);
+	ctx.lineTo(minX + offset, maxY);
+	ctx.quadraticCurveTo(minX, maxY, minX, maxY - offset);
+	ctx.lineTo(minX, minY + offset);
+	ctx.quadraticCurveTo(minX, minY, minX + offset, minY);
+
 	ctx.fillStyle = this.fill;
 
 	ctx.shadowColor = "#999";
-	ctx.shadowBlur = 20;
+	ctx.shadowBlur = 10;
 	ctx.shadowOffsetX = 5;
 	ctx.shadowOffsetY = 5;
 
@@ -89,9 +138,9 @@ Shape.prototype.draw = function(ctx) {
 
 	ctx.restore();
 
-	ctx.lineWidth = this.lineWidth;
-	ctx.strokeStyle = '#003300';
-	ctx.stroke();
+	//ctx.lineWidth = this.lineWidth;
+	//ctx.strokeStyle = '#000000';
+	//ctx.stroke();
 
 	//draw the connect handle
 	
@@ -213,10 +262,6 @@ function Connection(origShape, destShape){
 
 
 Connection.prototype.draw = function(ctx){
-
-    console.log('Connection.draw()');
-    console.log(this.origShape);
-    console.log(this.destShape);
 
     /* draw a line either between two shapes or between the original shape
        and a target position */
@@ -465,7 +510,14 @@ function CanvasState(canvas) {
     // double click for making new shapes
     canvas.addEventListener('dblclick', function(e) {
 	var mouse = myState.getMouse(e);
-	myState.addShape(new Shape(mouse.x - 10, mouse.y - 10));
+
+	if (myState.selection){
+	    $('#myModal').modal('show')
+	}
+	else
+	    myState.addShape(new Shape(mouse.x - 10, mouse.y - 10));
+
+
     }, true);
     
     // **** Options! ****
@@ -509,9 +561,16 @@ CanvasState.prototype.draw = function() {
 	    //shape.x + shape.w < 0 || shape.y + shape.h < 0) continue;
 	    connections[i].draw(ctx);
 	}
-
-
-
+	
+	
+	//draw connector lines
+	
+	if (this.connectionSelection != null) {
+	    var mySel = this.connectionSelection;
+	    mySel.draw(ctx);
+	}
+	
+	
 	// draw all shapes
 	var l = shapes.length;
 	for (var i = 0; i < l; i++) {
@@ -521,79 +580,30 @@ CanvasState.prototype.draw = function() {
 		shape.x + shape.w < 0 || shape.y + shape.h < 0) continue;
 	    shapes[i].draw(ctx);
 	}
-
-
-
-
 	
 	
 	// draw selection
 	// right now this is just a stroke along the edge of the selected Shape
 	if (this.selection != null) {
-	    ctx.strokeStyle = this.selectionColor;
-	    ctx.lineWidth = this.selectionWidth;
-	    ctx.lineWidth = 5;
 	    var mySel = this.selection;
-	    
-	    //SHOULD MOVE THIS INTO A FUNCTION OF THE OBJECT
-
-	    if (mySel.shape === 'square')
-		ctx.strokeRect(mySel.x,mySel.y,mySel.w,mySel.h);
-	    else if (mySel.shape === 'circle'){
-		ctx.beginPath();
-		ctx.arc(mySel.x, mySel.y, mySel.w/2, 0, 2 * Math.PI, false);
-		ctx.stroke();
-		ctx.closePath();
-	    }
-	    
-	    
+	    mySel.highlight(ctx, "select");
 	}
-
+	
 	// draw HOVER selection
 	// right now this is just a stroke along the edge of the selected Shape
 	if (this.hoverSelection != null) {
-
-	    ctx.strokeStyle = this.hoverColor;	    
-	    if (this.selection){
-		if (this.selection === this.hoverSelection)
-		    ctx.strokeStyle = this.hoverSelectedColor;
-	    }
-
-	    ctx.lineWidth = this.selectionWidth;
-	    ctx.lineWidth = 5;
 	    var mySel = this.hoverSelection;
-	    
-	    //SHOULD MOVE THIS INTO A FUNCTION OF THE OBJECT
-
-	    if (mySel.shape === 'square')
-		ctx.strokeRect(mySel.x,mySel.y,mySel.w,mySel.h);
-	    else if (mySel.shape === 'circle'){
-		ctx.beginPath();
-		ctx.arc(mySel.x, mySel.y, mySel.w/2, 0, 2 * Math.PI, false);
-		ctx.stroke();
-		ctx.closePath();
-	    }
-	    
-	    
+	    mySel.highlight(ctx, "hover");
 	}
-
-
-
-
-	//draw connector lines
-
-	if (this.connectionSelection != null) {
-	    var mySel = this.connectionSelection;
-	    mySel.draw(ctx);
-	}
-
-
-
 	
-	// ** Add stuff you want drawn on top all the time here **
-	this.valid = true;
+	
     }
+    
+    
+    // ** Add stuff you want drawn on top all the time here **
+    this.valid = true;
 }
+
 
 
 // Creates an object with x and y defined, set to the mouse position relative to the state's canvas
@@ -635,3 +645,4 @@ function init() {
     s.addShape(new Shape(80,150,'circle','Notiz'));
     s.addShape(new Shape(125,80));
 }
+

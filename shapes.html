@@ -1,12 +1,51 @@
 <html>
   <head>
-    <script type="text/javascript" src="shapes.js"></script>
 
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script type="text/javascript" 
+	    src="bootstrap-3.3.2-dist/js/bootstrap.min.js"></script>
+    <script type="text/javascript" 
+	    src="shapes.js"></script>
+
+
+
+    <link rel="stylesheet" 
+	  type="text/css" 
+	  href="shapes.css" />
+
+    <link rel="stylesheet" 
+	  type="text/css" 
+	  href="bootstrap-3.3.2-dist/css/bootstrap.min.css" />
   </head>
 
 
   <body onLoad='init()'>
     
+
+    <div class="modal bs-example-modal-sm" id="myModal">
+      <div class="modal-dialog modal-sm">
+	<div class="modal-content">
+	  <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" 
+		    aria-label="Cancel"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Edit node</h4>
+	  </div>
+	  <div class="modal-body">
+            <p>One fine body&hellip;</p>
+	  </div>
+	  <div class="modal-footer">
+            <button type="button" class="btn btn-primary">Ok</button>
+            <button type="button" class="btn btn-default" 
+		    data-dismiss="modal">Cancel</button>
+
+	  </div>
+	</div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+
     <canvas id="canvas1" width="800" height="600">
       This text is displayed if your browser does not support HTML5 Canvas.
     </canvas>

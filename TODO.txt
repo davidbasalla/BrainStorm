@@ -1,6 +1,4 @@
-- create modal for options
-- create connection class (line shape)
-- mark as hovered when mousing over
+- create modal for options??
 - get rid of current markation
 - create node point
 
@@ -32,5 +30,19 @@ each node needs to store an array of connected nodes?
 
 
 
-- should bring in concept of highlighted VS selected
+=======
 
+Think of how to edit a node...
+
+Edit text
+Edit color
+Edit shape
+
+
+- modal?
+- sidebar as in Apple Docs?
+- independent pop-up window?
+
+
+- work with bootstrap modals for now, work on repositioning them to
+  relative position of the node
