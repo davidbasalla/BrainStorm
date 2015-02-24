@@ -14,6 +14,8 @@ function Shape(x, y, shape, text) {
   // "x || 0" just means "if there is a value for x, use that. Otherwise use 0."
   // But we aren't checking anything else! We could put "Lalala" for the value of x 
 
+    this.shapeId = 0;
+
     this.x = x || 0;
     this.y = y || 0;
 
@@ -367,6 +369,8 @@ function CanvasState(canvas) {
     //this.ctx.scale(2,2);
     //this.ctxScale = 2;
 
+    this.currentShapeId = 1;
+
 
 
     // This complicates things a little but but fixes mouse co-ordinate problems
@@ -619,6 +623,8 @@ function CanvasState(canvas) {
 }
 
 CanvasState.prototype.addShape = function(shape) {
+
+    shape.shapeId = this.currentShapeId += 1;
     this.shapes.push(shape);
     this.valid = false;
 }
@@ -626,12 +632,15 @@ CanvasState.prototype.addShape = function(shape) {
 
 CanvasState.prototype.deleteShape = function(shape) {
 
+    console.log('deleteShape()');
+
     //FIRST REMOVE CONNECTIONS
     for(var i = this.connections.length - 1; i >= 0; i--) {
 	if(this.connections[i].origShape === shape ||
 	   this.connections[i].destShape === shape){
 	    this.connections.splice(i, 1);
 	    this.valid = false;
+
 	}
     }
 
@@ -761,6 +770,158 @@ function init() {
     // Lets make some partially transparent
     //s.addShape(new Shape(80,150,'circle','Notiz'));
     s.addShape(new Shape(125,80));
+
+    $('#saveAsButton').on(
+	'click',
+	function(evt)
+	{
+	    //SAVE THE DATA AS JSON FORMAT HERE...
+
+	    console.log(s);
+	    console.log(s.shapes);
+	    
+
+	    var combinedText = {
+		shapes: s.shapes,
+		connections: s.connections
+	    };
+
+	    var jsonText = JSON.stringify(combinedText);
+
+	    var data = new Blob([jsonText], {type: 'text/plain'});
+	    var textFile = null;
+	    
+	    // If we are replacing a previously generated file we need to
+	    // manually revoke the object URL to avoid memory leaks.
+	    if (textFile !== null) {
+		window.URL.revokeObjectURL(textFile);
+	    }
+	    
+	    textFile = window.URL.createObjectURL(data);
+	    
+	    var link = document.getElementById('downloadlink');
+	    link.href = textFile;
+
+	    link.click();
+
+
+	}
+    );	
+
+
+    $('#loadButton').on(
+	'click',
+	function(evt)
+	{
+	    console.log('LOADING FILE...');
+	    //trigger the hidden fileLoader
+	    $('#filePicker', this.el).trigger('click');
+	    event.stopPropagation(); 
+	}
+    );
+    
+    $('#filePicker', this.el).on(
+	'change',
+	function(e)
+	{
+	    console.log('FILE LOADED...');
+	    
+	    var file = e.currentTarget.files[0];
+	    var extension = file.name.split('.').pop();	    
+	    
+	    //reset all
+	    s.shapes = [];
+	    s.connections = [];
+	    s.selection = null;
+	    s.hoverSelection = null;
+	    s.valid = false;
+		
+	    //check for correct extension
+	    if(extension == 'json'){
+		// FILE READING
+		var reader = new FileReader();
+		
+		reader.onload = function(event){
+		    
+		    //parse JSON
+		    console.log('AnnotationView.parseJSON()');
+		    console.log(reader.result);
+
+		    var jsonContents = JSON.parse(reader.result);
+
+		    
+		    //deal with shapes
+
+		    var shapes = jsonContents.shapes;
+		    for(var i = 0; i < shapes.length; i++){
+
+			var elem = shapes[i];
+			var shape = new Shape(elem.x, elem.y, "square", elem.text);
+			shape.shapeId = elem.shapeId;
+			shape.h = elem.h;
+			shape.setWidth(elem.w);
+
+			//update the current shape id
+			s.currentShapeId = Math.max(s.currentShapeId, shape.shapeId);
+
+			s.shapes.push(shape);
+		    }
+
+
+		    //deal with connections
+
+		    var connections = jsonContents.connections;
+
+		    console.log('CONNECTIONS:');
+		    console.log(connections);
+
+		    for(var i = 0; i < connections.length; i++){
+
+			var elem = connections[i];
+
+			//dont create again, just loop through already existing ones...
+
+			var origShape = null;
+			for (index in s.shapes){
+
+			    console.log(s.shapes[index].shapeId);
+			    console.log(connections[i].origShape.shapeId);
+
+
+			    if (s.shapes[index].shapeId === connections[i].origShape.shapeId){
+				console.log('FOUND 1');
+				origShape = s.shapes[index];
+				break;
+			    }
+			}
+
+			var destShape = null;
+			for (index in s.shapes){
+			    if (s.shapes[index].shapeId === connections[i].destShape.shapeId){
+				console.log('FOUND 2');
+				destShape = s.shapes[index];
+				break;
+			    }
+			}
+
+
+			if (destShape && origShape){
+			    console.log('ADDING CONNECTION');
+			    var connec = new Connection(origShape, destShape);
+			    s.connections.push(connec);
+			}
+		    }
+
+
+		    s.valid = false;
+		}
+
+
+		reader.readAsText(file);		
+	    }
+	}
+    );
+    
 }
 
 

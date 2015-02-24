@@ -33,8 +33,8 @@
       <a href="#" class="pure-menu-heading">BrainStorm</a>
       
       <ul>
-        <li class="pure-menu-selected"><a href="#">Load</a></li>
-        <li><a href="#">SaveAs...</a></li>
+        <li class="pure-menu-selected" id="loadButton"><a href="#">Load</a></li>
+        <li><a href="#" id="saveAsButton">SaveAs...</a></li>
         <li><a href="#">About</a></li>
       </ul>
     </div>
@@ -79,6 +79,12 @@
       This text is displayed if your browser does not support HTML5 Canvas.
     </canvas>
 
+
+   <!-- HIDDEN FILE PICKER -->
+    <input type="file" name="xmlInput" id="filePicker">
+    
+    <!-- HIDDEN DOWNLOAD LINK -->
+    <a download="brainStorm.json" id="downloadlink" style="display: none">Download</a>
 
 
   </body>
