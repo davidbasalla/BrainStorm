@@ -46,3 +46,22 @@ Edit shape
 
 - work with bootstrap modals for now, work on repositioning them to
   relative position of the node
+
+
+
+====
+
+work with modal:
+
+when opening the modal, set the values from the node
+when closing the modal, set the values from the modal
+
+
+
+NEED ability to save a file and load it again
+(as json preferably)
+
+ability to zoom/pan?
+
+- canvas zooming can happen with scaling the context - however mouse
+  coord tracking needs to be updated!!

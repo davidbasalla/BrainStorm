@@ -15,14 +15,33 @@
 	  type="text/css" 
 	  href="shapes.css" />
 
+
     <link rel="stylesheet" 
 	  type="text/css" 
 	  href="bootstrap-3.3.2-dist/css/bootstrap.min.css" />
+
+    <link rel="stylesheet" 
+	  href="http://yui.yahooapis.com/pure/0.5.0/pure-min.css">
+
   </head>
 
 
   <body onLoad='init()'>
     
+
+    <div class="pure-menu pure-menu-open pure-menu-horizontal">
+      <a href="#" class="pure-menu-heading">BrainStorm</a>
+      
+      <ul>
+        <li class="pure-menu-selected"><a href="#">Load</a></li>
+        <li><a href="#">SaveAs...</a></li>
+        <li><a href="#">About</a></li>
+      </ul>
+    </div>
+
+    
+
+
 
     <div class="modal bs-example-modal-sm" id="myModal">
       <div class="modal-dialog modal-sm">
@@ -33,10 +52,20 @@
             <h4 class="modal-title">Edit node</h4>
 	  </div>
 	  <div class="modal-body">
-            <p>One fine body&hellip;</p>
+
+
+            <p>
+	      <input type="text" name="nodeText" id="nodeText"
+		     value="nodeText">
+	    </p>
+
+
+
+
+
 	  </div>
 	  <div class="modal-footer">
-            <button type="button" class="btn btn-primary">Ok</button>
+            <button type="button" class="btn btn-primary" id="modalok">Ok</button>
             <button type="button" class="btn btn-default" 
 		    data-dismiss="modal">Cancel</button>
 

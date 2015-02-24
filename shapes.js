@@ -17,51 +17,52 @@ function Shape(x, y, shape, text) {
     this.x = x || 0;
     this.y = y || 0;
 
-    this.text = text || "testText";
+    this.text = text || "sample text";
     this.shape = shape || "square";
     this.fill = '#EEEEEE';
     this.lineWidth = 1;
 
     if(this.shape === 'square'){
 	this.w = 100;
-	this.h = 50;
-    }
-    if(this.shape === 'circle'){
-	this.w = 100;
-	this.h = 50;
+	this.h = 55;
     }
 
-    var connectWidth = 10;
-    this.connector = new Connector(this.x + this.w/2.0 - connectWidth/2.0, 
+    this.connector = new Connector(this.x + this.w/2.0 - 10/2.0, 
 				   this.y + this.h, 
-				   connectWidth);
+				   10);
 
-
+    this.deleteBox = new DeleteBox(this.x + this.w - 14, y);
 }
 
+Shape.prototype.setWidth = function(value){
+    this.w = value;
+    this.connector.x = this.x + this.w/2.0 - 5;
+    this.deleteBox.x = this.x + this.w - 14;
+}
 
 Shape.prototype.move = function(x, y){
 
     var oldX = this.x;
     var oldY = this.y;
-
     this.x = x;
     this.y = y;
+    offsetX = this.x - oldX;
+    offsetY = this.y - oldY;
 
     var connectorOldX = this.connector.x;
     var connectorOldY = this.connector.y;
     var connectorOldTargetX = this.connector.targetX;
     var connectorOldTargetY = this.connector.targetY;
 
-
-    offsetX = this.x - oldX;
-    offsetY = this.y - oldY;
-
     this.connector.x = connectorOldX + offsetX;
     this.connector.y = connectorOldY + offsetY;
     this.connector.targetX = connectorOldTargetX + offsetX;
     this.connector.targetY = connectorOldTargetY + offsetY;
 
+    var deleteBoxOldX = this.deleteBox.x;
+    var deleteBoxOldY = this.deleteBox.y;
+    this.deleteBox.x = deleteBoxOldX + offsetX;
+    this.deleteBox.y = deleteBoxOldY + offsetY;
 }
 
 
@@ -106,9 +107,9 @@ Shape.prototype.draw = function(ctx) {
     if (this.shape === "square"){
 	
 	ctx.save();
-
+	
 	//ctx.rect(this.x, this.y, this.w, this.h);
-
+	
 	var minX = this.x;
 	var minY = this.y;
 	var maxX = this.x + this.w;
@@ -137,13 +138,10 @@ Shape.prototype.draw = function(ctx) {
 	ctx.closePath();
 
 	ctx.restore();
-
-	//ctx.lineWidth = this.lineWidth;
-	//ctx.strokeStyle = '#000000';
-	//ctx.stroke();
-
-	//draw the connect handle
 	
+
+	//DRAW THE CONNECTOR
+
 	ctx.fillStyle = 'black';
 
 	ctx.fillRect(this.connector.x, 
@@ -152,53 +150,65 @@ Shape.prototype.draw = function(ctx) {
 		     this.connector.w);
 
 
-	}
-    
-    else if (this.shape === "circle"){
+	//DRAW THE DELETE BOX
 
-	ctx.save()
+	/*
+	ctx.fillRect(this.x + this.w - 20, 
+		     this.y, 
+		     20, 
+		     20);
+		     */
+
+
+	this.deleteBox.draw(ctx);
+
+
+
 	
-	ctx.beginPath();
-	ctx.arc(this.x, this.y, this.w/2, 0, 2 * Math.PI, false);
-	ctx.fillStyle = this.fill;
-
-	ctx.shadowColor = "#999";
-	ctx.shadowBlur = 20;
-	ctx.shadowOffsetX = 5;
-	ctx.shadowOffsetY = 5;
-
-	ctx.fill();
-	ctx.closePath();
-
-	ctx.restore();
-
-	ctx.lineWidth = this.lineWidth;
-	ctx.strokeStyle = '#003300';
-	ctx.stroke();
-	ctx.closePath();
 	
-	}
+    }
     
+
+
+
+    // DRAW THE TEXT
+
     var text = this.text;
 
     var offsetX = 0;
     var offsetY = 0;
 
     if (this.shape === "square"){
-	offsetX = 10;
-	offsetY = this.h/2.0;
+	offsetX = 15;
+	offsetY = this.h/2.0 + 7;
     }
     else if (this.shape === "circle"){
 	offsetX = -10;
     }
 
-    ctx.font="20px Georgia";
+    ctx.font="14px Avenir";
     ctx.fillText(text, this.x + offsetX, this.y + offsetY);
     //var metrics = ctx.measureText(text);
     //var width = metrics.width;
 
 
 }
+
+Shape.prototype.setText = function(text, ctx) {
+
+    /* sets the size dependent on text content - 
+       issue, need to get the CTX in order to determine
+       the proper dimensions for it */
+
+    ctx.font="14px Avenir";
+    ctx.fillText(text, this.x, this.y);
+    var metrics = ctx.measureText(text);
+    var width = metrics.width;
+
+    this.setWidth(width + 30);
+}
+
+
 
 // Determine if a point is inside the shape's bounds
 Shape.prototype.contains = function(mx, my) {
@@ -301,7 +311,40 @@ Connection.prototype.resetTarget = function() {
 }
 
 
+function DeleteBox(x, y){
+    
+    this.x = x;
+    this.y = y;
+    this.w = 8;
+    this.offset = 5;
 
+}
+
+DeleteBox.prototype.contains = function(mx, my) {
+
+    return  (this.x <= mx) && (this.x + this.w >= mx) &&
+        (this.y + this.offset <= my) && (this.y + this.offset + this.w >= my);
+    
+}
+
+DeleteBox.prototype.draw = function(ctx){
+    
+    ctx.strokeStyle = 'lightgrey';
+    
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+
+    var y = this.y + this.offset;
+
+    ctx.moveTo(this.x, y);
+    ctx.lineTo(this.x + this.w, y + this.w);
+    
+    ctx.moveTo(this.x + this.w, y);
+    ctx.lineTo(this.x, y + this.w);
+    
+    ctx.closePath();
+    ctx.stroke();
+}
 
 
 
@@ -310,9 +353,22 @@ function CanvasState(canvas) {
     // **** First some setup! ****
   
     this.canvas = canvas;
+    this.canvas.width = document.body.clientWidth; //document.width is obsolete
+    this.canvas.height = document.body.clientHeight; //document.height is obsolete
+
+
+    //this.canvas.width = 8000;
+    //this.canvas.height = 4000;
+
+
     this.width = canvas.width;
     this.height = canvas.height;
     this.ctx = canvas.getContext('2d');
+    //this.ctx.scale(2,2);
+    //this.ctxScale = 2;
+
+
+
     // This complicates things a little but but fixes mouse co-ordinate problems
     // when there's a border or padding. See getMouse for more detail
     var stylePaddingLeft, stylePaddingTop, styleBorderLeft, styleBorderTop;
@@ -365,8 +421,18 @@ function CanvasState(canvas) {
 	if (myState.hoverSelection){
 
 	    mySel = myState.hoverSelection;
-	    myState.selection = mySel;
 
+	    //check for deleteBox
+
+	    if (myState.hoverSelection.deleteBox.contains(mx, my)){
+		myState.deleteShape(mySel);
+		myState.hoverSelection = null;
+		myState.selection = null;
+		myState.valid = false;
+		return;
+	    }
+
+	    myState.selection = mySel;
 	    myState.dragoffx = mx - mySel.x;
 	    myState.dragoffy = my - mySel.y;
 
@@ -508,11 +574,33 @@ function CanvasState(canvas) {
     }, true);
 
     // double click for making new shapes
+
+    var _ctx = this.ctx;
     canvas.addEventListener('dblclick', function(e) {
 	var mouse = myState.getMouse(e);
 
 	if (myState.selection){
-	    $('#myModal').modal('show')
+
+	    //set the values of the modal here...
+	    var modal = $('#myModal');
+
+	    modal.find('#nodeText').val(myState.selection.text);
+
+	    modal.find('#modalok').on(
+		'click',
+		function(evt)
+		{
+		    myState.selection.setText(modal.find('#nodeText').val(), _ctx);
+		    myState.selection.text = modal.find('#nodeText').val();
+		    modal.modal('hide');
+		    myState.valid = false; // Something's dragging so we must redraw
+		}
+	    );
+
+	    modal.modal('show');
+
+
+
 	}
 	else
 	    myState.addShape(new Shape(mouse.x - 10, mouse.y - 10));
@@ -534,6 +622,35 @@ CanvasState.prototype.addShape = function(shape) {
     this.shapes.push(shape);
     this.valid = false;
 }
+
+
+CanvasState.prototype.deleteShape = function(shape) {
+
+    //FIRST REMOVE CONNECTIONS
+    for(var i = this.connections.length - 1; i >= 0; i--) {
+	if(this.connections[i].origShape === shape ||
+	   this.connections[i].destShape === shape){
+	    this.connections.splice(i, 1);
+	    this.valid = false;
+	}
+    }
+
+    //SECONDLY REMOVE SHAPE
+    for(var i = this.shapes.length - 1; i >= 0; i--) {
+	if(this.shapes[i] === shape) {
+	    this.shapes.splice(i, 1);
+	    this.valid = false;
+	    return
+	}
+    }
+
+    
+
+
+
+
+}
+
 
 CanvasState.prototype.clear = function() {
     this.ctx.clearRect(0, 0, this.width, this.height);
@@ -640,9 +757,11 @@ function init() {
     
     var s = new CanvasState(document.getElementById('canvas1'));
     s.addShape(new Shape(40,40)); // The default is gray
-    s.addShape(new Shape(60,140));
+    s.addShape(new Shape(60,140, "square", "testingThis..."));
     // Lets make some partially transparent
-    s.addShape(new Shape(80,150,'circle','Notiz'));
+    //s.addShape(new Shape(80,150,'circle','Notiz'));
     s.addShape(new Shape(125,80));
 }
+
+
 
