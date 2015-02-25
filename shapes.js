@@ -349,6 +349,102 @@ DeleteBox.prototype.draw = function(ctx){
 }
 
 
+function Modal(){
+    /* access to the bootstrap model */
+
+    this.jqModal = $('#myModal');
+    this.jqTextField = this.jqModal.find('#nodeText');
+    this.jqOkButton = this.jqModal.find('#modalok');
+    
+    //colorButtons
+    this.colors = ['#EEEEEE', 'white', 'grey', 'lightgreen', '#FF6666'];
+    this.colorButtons = [
+	this.jqModal.find('#colorBox1'),
+	this.jqModal.find('#colorBox2'),
+	this.jqModal.find('#colorBox3'),
+	this.jqModal.find('#colorBox4'),
+	this.jqModal.find('#colorBox5')
+    ];
+    //set default col to GREY
+    this.currentColor = this.colors[0];
+    
+    this.setButtonClickEvents();
+}
+
+
+Modal.prototype.show = function(){
+    this.jqModal.modal('show');
+}
+
+
+Modal.prototype.setButtonClickEvents = function(){
+    
+    var _this = this;
+    for (i in this.colorButtons){
+	this.colorButtons[i].on(
+	    'click',
+	    function(evt){
+		color = _this.colors[i];
+		_this.setColorBtnActive(_this.colorButtons[i]);
+	    }
+	);
+    }
+}
+
+
+
+Modal.prototype.setNode = function(node){
+    /* sets up the contents of a modal according to a node */
+    
+    this.setText(node.text);
+    this.setColor(node.fill);
+}
+
+
+
+Modal.prototype.setText = function(text){
+    this.jqTextField.val(text);
+}
+
+
+Modal.prototype.setColor = function(fill){
+
+    for (i in this.colors){
+	if (this.colors[i] === fill){
+	    this.currentColor = this.colors[i];
+	    this.setColorBtnActive(this.colorButtons[i]);
+	}
+    }
+}
+
+Modal.prototype.setColorBtnActive = function(button){
+    
+    for (i in this.colorButtons)
+	this.colorButtons[i].removeClass('color-box-selected');
+    button.addClass('color-box-selected');
+}
+
+
+Modal.prototype.setCallback = function(state, node, ctx){
+    
+    var _this = this;
+    this.jqOkButton.on(
+	'click',
+	function(evt)
+	{
+
+	    console.log('TEXT:');
+	    console.log(_this.jqTextField.val());
+	    node.setText(_this.jqTextField.val(), ctx);
+	    node.fill = _this.currentColor;
+	    _this.jqModal.modal('hide');
+	    state.valid = false; // Something's dragging so we must redraw
+	}
+    );
+}    
+
+
+
 
 
 function CanvasState(canvas) {
@@ -371,6 +467,7 @@ function CanvasState(canvas) {
 
     this.currentShapeId = 1;
 
+    this.modal = new Modal();
 
 
     // This complicates things a little but but fixes mouse co-ordinate problems
@@ -595,106 +692,9 @@ function CanvasState(canvas) {
 
 	if (myState.selection){
 
-	    //set the values of the modal here...
-	    var modal = $('#myModal');
-
-	    modal.find('#nodeText').val(myState.selection.text);
-
-
-	    //if current color === 
-
-	    if (myState.selection.fill === '#EEEEEE')
-		myState.setColorButtonClass(modal.find('#colorBox1'));
-	    else if (myState.selection.fill === 'white')
-		myState.setColorButtonClass(modal.find('#colorBox2'));
-	    else if (myState.selection.fill === 'grey')
-		myState.setColorButtonClass(modal.find('#colorBox3'));
-	    else if (myState.selection.fill === 'lightgreen')
-		myState.setColorButtonClass(modal.find('#colorBox4'));
-	    else if (myState.selection.fill === '#FF6666')
-		myState.setColorButtonClass(modal.find('#colorBox5'));
-
-
-
-	    //set the color here as a global variable, feels hacky...
-	    var color = '#EEEEEE';
-
-
-	    // LOTS OF MODAL FUNCTIONALITY HERE...
-	    // can I put this into a class somehow??
-
-	    modal.find('#modalok').on(
-		'click',
-		function(evt)
-		{
-		    myState.selection.setText(modal.find('#nodeText').val(), _ctx);
-		    myState.selection.text = modal.find('#nodeText').val();
-		    myState.selection.fill = color;
-		    modal.modal('hide');
-		    myState.valid = false; // Something's dragging so we must redraw
-		}
-	    );
-
-
-	    //THIS SEEMS REALLY BAD!!! DRY
-	    // should be a better way of organising this
-
-	    var _this = this;
-
-	    modal.find('#colorBox1').on(
-		'click',
-		function(evt)
-		{
-		    color = '#EEEEEE';
-		    var btn = modal.find('#colorBox1');
-		    myState.setColorButtonClass(btn);
-		}
-	    );
-
-	    modal.find('#colorBox2').on(
-		'click',
-		function(evt)
-		{
-		    color = 'white';
-		    var btn = modal.find('#colorBox2');
-		    myState.setColorButtonClass(btn);
-
-		    //btn.toggleClass('color-box-selected');
-		}
-	    );
-	    modal.find('#colorBox3').on(
-		'click',
-		function(evt)
-		{
-		    color = 'grey';
-		    var btn = modal.find('#colorBox3');
-		    myState.setColorButtonClass(btn);
-		}
-	    );
-	    modal.find('#colorBox4').on(
-		'click',
-		function(evt)
-		{
-		    color = 'lightgreen';
-		    var btn = modal.find('#colorBox4');
-		    myState.setColorButtonClass(btn);
-		}
-	    );
-	    modal.find('#colorBox5').on(
-		'click',
-		function(evt)
-		{
-		    color = '#FF6666';
-		    var btn = modal.find('#colorBox5');
-		    myState.setColorButtonClass(btn);
-		}
-	    );
-
-
-	    modal.modal('show');
-
-
-
+	    myState.modal.setNode(myState.selection);
+	    myState.modal.setCallback(myState, myState.selection, _ctx);
+	    myState.modal.show();
 	}
 	else
 	    myState.addShape(new Shape(mouse.x - 10, mouse.y - 10));
@@ -711,33 +711,6 @@ function CanvasState(canvas) {
     this.interval = 15;
     setInterval(function() { myState.draw(); }, myState.interval);
 }
-
-CanvasState.prototype.setColorButtonClass = function(jqSel) {
-
-    console.log('setColorButtonClass');
-    console.log(jqSel);
-
-    //turn off for all modals
-
-    modal = $('#myModal');
-    btn1 = modal.find('#colorBox1');
-    btn2 = modal.find('#colorBox2');
-    btn3 = modal.find('#colorBox3');
-    btn4 = modal.find('#colorBox4');
-    btn5 = modal.find('#colorBox5');
-    
-    var btnList = [btn1, btn2, btn3, btn4, btn5];
-
-    for (index in btnList){
-	btnList[index].removeClass('color-box-selected');
-    }
-    jqSel.addClass('color-box-selected');
-
-
-
-
-}
-
 
 
 CanvasState.prototype.addShape = function(shape) {
