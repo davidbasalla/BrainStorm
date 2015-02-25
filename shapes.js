@@ -590,16 +590,51 @@ function CanvasState(canvas) {
 
 	    modal.find('#nodeText').val(myState.selection.text);
 
+	    var color = '#EEEEEE';
+
+
 	    modal.find('#modalok').on(
 		'click',
 		function(evt)
 		{
 		    myState.selection.setText(modal.find('#nodeText').val(), _ctx);
 		    myState.selection.text = modal.find('#nodeText').val();
+		    myState.selection.fill = color;
 		    modal.modal('hide');
 		    myState.valid = false; // Something's dragging so we must redraw
 		}
 	    );
+
+	    //THIS SEEMS REALLY BAD!!! DRY
+	    modal.find('#colorBox1').on(
+		'click',
+		function(evt)
+		{
+		    color = '#EEEEEE';
+		}
+	    );
+	    modal.find('#colorBox2').on(
+		'click',
+		function(evt)
+		{
+		    color = 'white';
+		}
+	    );
+	    modal.find('#colorBox3').on(
+		'click',
+		function(evt)
+		{
+		    color = 'lightgreen';
+		}
+	    );
+	    modal.find('#colorBox4').on(
+		'click',
+		function(evt)
+		{
+		    color = '#FF6666';
+		}
+	    );
+
 
 	    modal.modal('show');
 
@@ -860,6 +895,8 @@ function init() {
 			shape.shapeId = elem.shapeId;
 			shape.h = elem.h;
 			shape.setWidth(elem.w);
+			console.log(elem.fill);
+			shape.fill = elem.fill;
 
 			//update the current shape id
 			s.currentShapeId = Math.max(s.currentShapeId, shape.shapeId);

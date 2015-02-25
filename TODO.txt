@@ -1,62 +1,4 @@
-- create modal for options??
-- get rid of current markation
-- create node point
-
-
-
-==== how to store connections? ====
-
-each node needs to store an array of connected nodes?
-- issue with repition? doubling up of data...?
-- important of directionality of connection?
-  - would probably cause a few issues...
-
-   n -----> n
-       &
-   n <----- n
-
-       VS
-
-   n <----> n
-
-   Bottom one is probably the one to go with...
-
-   
-- issue that you cant store a pointer to similar class within an
-  object??
-
-- should rework the code, so that when create a drag, a Connection
-  object gets created!! Gets its position from Connector...?
-
-
-
-=======
-
-Think of how to edit a node...
-
-Edit text
-Edit color
-Edit shape
-
-
-- modal?
-- sidebar as in Apple Docs?
-- independent pop-up window?
-
-
-- work with bootstrap modals for now, work on repositioning them to
-  relative position of the node
-
-
-
 ====
-
-work with modal:
-
-when opening the modal, set the values from the node
-when closing the modal, set the values from the modal
-
-
 
 NEED ability to save a file and load it again
 (as json preferably)
@@ -65,3 +7,15 @@ ability to zoom/pan?
 
 - canvas zooming can happen with scaling the context - however mouse
   coord tracking needs to be updated!!
+
+
+=========
+
+Multiple select and move?
+Color edit?
+Shape edit?
+be able to delete connection
+be able to reassign connection
+hook up keyboard shortcuts!
+ZOOM!
+copy paste cut

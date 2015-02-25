@@ -4,3 +4,25 @@
     right:0px;
     margin-left: -1000px;
 }
+.color-box {    
+    display: inline-block;
+    width:23px;
+    height:23px;    
+    padding-left: 10px;
+    padding-right: 10px;    
+    margin-right: 5px;
+    margin-left: 5px;
+    border: 1px solid black;
+}
+#colorBox1 {
+    background-color: #BBB;
+}
+#colorBox2 {
+    background-color: white;
+}
+#colorBox3 {
+    background-color: lightgreen;
+}
+#colorBox4 {
+    background-color: #F66;
+}
