@@ -624,10 +624,17 @@ function CanvasState(canvas) {
 		'click',
 		function(evt)
 		{
-		    color = 'lightgreen';
+		    color = 'grey';
 		}
 	    );
 	    modal.find('#colorBox4').on(
+		'click',
+		function(evt)
+		{
+		    color = 'lightgreen';
+		}
+	    );
+	    modal.find('#colorBox5').on(
 		'click',
 		function(evt)
 		{

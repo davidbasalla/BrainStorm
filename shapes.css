@@ -21,8 +21,11 @@
     background-color: white;
 }
 #colorBox3 {
-    background-color: lightgreen;
+    background-color: grey;
 }
 #colorBox4 {
+    background-color: lightgreen;
+}
+#colorBox5 {
     background-color: #F66;
 }
