@@ -29,3 +29,11 @@
 #colorBox5 {
     background-color: #F66;
 }
+.color-box-selected{
+    border: 4px solid lightblue;
+    padding-left: 7px;
+    padding-right: 7px;    
+    margin-right: 5px;
+    margin-left: 5px;    
+
+}

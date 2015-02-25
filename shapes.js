@@ -417,10 +417,19 @@ function CanvasState(canvas) {
 
     canvas.addEventListener('mousedown', function(e) {
 
+	//need to figure out the cases here
+
+	// 1.) if no selection, start a drag selection
+	// 2.) if hover selection, start a select/delete/move
+	// 3.) if connector, start a connection drag
+
+
 	var mouse = myState.getMouse(e);
 	var mx = mouse.x;
 	var my = mouse.y;
 
+
+	// HOVER SELECTION ////
 
 	if (myState.hoverSelection){
 
@@ -446,6 +455,9 @@ function CanvasState(canvas) {
 	}
 
 
+
+	// CHECK FOR CONNECTORS ///////
+
 	var shapes = myState.shapes;
 	var l = shapes.length;
 	for (var i = l-1; i >= 0; i--) {
@@ -465,10 +477,7 @@ function CanvasState(canvas) {
 	}
 
 
-
-	// havent returned means we have failed to select anything.
-	// If there was an object selected, we deselect it
-
+	// IF SELECTION ////////////
 	if (myState.selection) {
 	    if (!myState.selection.contains(mx, my)){
 
@@ -580,6 +589,7 @@ function CanvasState(canvas) {
     // double click for making new shapes
 
     var _ctx = this.ctx;
+
     canvas.addEventListener('dblclick', function(e) {
 	var mouse = myState.getMouse(e);
 
@@ -590,8 +600,28 @@ function CanvasState(canvas) {
 
 	    modal.find('#nodeText').val(myState.selection.text);
 
+
+	    //if current color === 
+
+	    if (myState.selection.fill === '#EEEEEE')
+		myState.setColorButtonClass(modal.find('#colorBox1'));
+	    else if (myState.selection.fill === 'white')
+		myState.setColorButtonClass(modal.find('#colorBox2'));
+	    else if (myState.selection.fill === 'grey')
+		myState.setColorButtonClass(modal.find('#colorBox3'));
+	    else if (myState.selection.fill === 'lightgreen')
+		myState.setColorButtonClass(modal.find('#colorBox4'));
+	    else if (myState.selection.fill === '#FF6666')
+		myState.setColorButtonClass(modal.find('#colorBox5'));
+
+
+
+	    //set the color here as a global variable, feels hacky...
 	    var color = '#EEEEEE';
 
+
+	    // LOTS OF MODAL FUNCTIONALITY HERE...
+	    // can I put this into a class somehow??
 
 	    modal.find('#modalok').on(
 		'click',
@@ -605,19 +635,31 @@ function CanvasState(canvas) {
 		}
 	    );
 
+
 	    //THIS SEEMS REALLY BAD!!! DRY
+	    // should be a better way of organising this
+
+	    var _this = this;
+
 	    modal.find('#colorBox1').on(
 		'click',
 		function(evt)
 		{
 		    color = '#EEEEEE';
+		    var btn = modal.find('#colorBox1');
+		    myState.setColorButtonClass(btn);
 		}
 	    );
+
 	    modal.find('#colorBox2').on(
 		'click',
 		function(evt)
 		{
 		    color = 'white';
+		    var btn = modal.find('#colorBox2');
+		    myState.setColorButtonClass(btn);
+
+		    //btn.toggleClass('color-box-selected');
 		}
 	    );
 	    modal.find('#colorBox3').on(
@@ -625,6 +667,8 @@ function CanvasState(canvas) {
 		function(evt)
 		{
 		    color = 'grey';
+		    var btn = modal.find('#colorBox3');
+		    myState.setColorButtonClass(btn);
 		}
 	    );
 	    modal.find('#colorBox4').on(
@@ -632,6 +676,8 @@ function CanvasState(canvas) {
 		function(evt)
 		{
 		    color = 'lightgreen';
+		    var btn = modal.find('#colorBox4');
+		    myState.setColorButtonClass(btn);
 		}
 	    );
 	    modal.find('#colorBox5').on(
@@ -639,6 +685,8 @@ function CanvasState(canvas) {
 		function(evt)
 		{
 		    color = '#FF6666';
+		    var btn = modal.find('#colorBox5');
+		    myState.setColorButtonClass(btn);
 		}
 	    );
 
@@ -663,6 +711,34 @@ function CanvasState(canvas) {
     this.interval = 15;
     setInterval(function() { myState.draw(); }, myState.interval);
 }
+
+CanvasState.prototype.setColorButtonClass = function(jqSel) {
+
+    console.log('setColorButtonClass');
+    console.log(jqSel);
+
+    //turn off for all modals
+
+    modal = $('#myModal');
+    btn1 = modal.find('#colorBox1');
+    btn2 = modal.find('#colorBox2');
+    btn3 = modal.find('#colorBox3');
+    btn4 = modal.find('#colorBox4');
+    btn5 = modal.find('#colorBox5');
+    
+    var btnList = [btn1, btn2, btn3, btn4, btn5];
+
+    for (index in btnList){
+	btnList[index].removeClass('color-box-selected');
+    }
+    jqSel.addClass('color-box-selected');
+
+
+
+
+}
+
+
 
 CanvasState.prototype.addShape = function(shape) {
 
