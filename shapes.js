@@ -887,7 +887,11 @@ CanvasState.prototype.draw = function() {
 	
 	// ** Add stuff you want drawn in the background all the time here **
 	
-	// draw all shapes
+
+
+	// draw all Connections
+
+	ctx.strokeStyle = 'lightgrey';
 	var l = connections.length;
 	for (var i = 0; i < l; i++) {
 	    var con = connections[i];
@@ -900,11 +904,13 @@ CanvasState.prototype.draw = function() {
 	
 	//draw connector lines
 	
+
 	if (this.connectionSelection != null) {
+	    ctx.strokeStyle = 'red';
 	    var mySel = this.connectionSelection;
 	    mySel.draw(ctx);
 	}
-	
+
 	
 	// draw all shapes
 	var l = shapes.length;
@@ -925,7 +931,6 @@ CanvasState.prototype.draw = function() {
 	}
 	
 	// draw HOVER selection
-	// right now this is just a stroke along the edge of the selected Shape
 	if (this.hoverSelection != null) {
 	    var mySel = this.hoverSelection;
 	    mySel.highlight(ctx, "hover");
