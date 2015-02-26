@@ -24,9 +24,12 @@ function Shape(x, y, shape, text) {
     this.fill = '#EEEEEE';
     this.lineWidth = 1;
 
+    this.lineHeight = 20;
+
+
     if(this.shape === 'square'){
 	this.w = 100;
-	this.h = 55;
+	this.h = 50;
     }
 
     this.connector = new Connector(this.x + this.w/2.0 - 10/2.0, 
@@ -186,8 +189,6 @@ Shape.prototype.draw = function(ctx) {
 Shape.prototype.setText = function(text, ctx) {
 
     this.text = text;
-    console.log(this.text);
-    console.log(this.text.split('\n'));
 
     /* sets the size dependent on text content - 
        issue, need to get the CTX in order to determine
@@ -213,7 +214,7 @@ Shape.prototype.setText = function(text, ctx) {
     }
     
     this.setWidth(maxWidth + 30);
-    this.setHeight(maxHeight + 35);
+    this.setHeight(maxHeight + 30);
     //this.wrapText(ctx, text, this.x + offsetX, this.y + offsetY, 100, 20);
 
     //var metrics = ctx.measureText(text);
@@ -255,21 +256,13 @@ Shape.prototype.wrapText = function(context, text, x, y, maxWidth, lineHeight) {
     context.font="14px Avenir";
 
     var lines = text.split('\n');
-    var lineHeight = 20;
     var height = y;
 
     var maxWidth = 0;
 
     for (i in lines){
-	var line = lines[i];
-	//var metrics = context.measureText(line);
-	//var width = metrics.width;
-
-	//if (width > maxWidth)
-	 //   maxWidth = width;
-
-	context.fillText(line, x, height);
-	height += lineHeight;
+	context.fillText(lines[i], x, height);
+	height += this.lineHeight;
     }
 
     //this.setWidth(maxWidth);
@@ -1071,10 +1064,9 @@ function init() {
 		    for(var i = 0; i < shapes.length; i++){
 
 			var elem = shapes[i];
-			var shape = new Shape(elem.x, elem.y, "square", elem.text);
+			var shape = new Shape(elem.x, elem.y, "square");
+			shape.setText(elem.text, s.ctx)
 			shape.shapeId = elem.shapeId;
-			shape.h = elem.h;
-			shape.setWidth(elem.w);
 			shape.fill = elem.fill;
 
 			//update the current shape id
