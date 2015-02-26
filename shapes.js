@@ -42,6 +42,12 @@ Shape.prototype.setWidth = function(value){
     this.deleteBox.x = this.x + this.w - 14;
 }
 
+
+Shape.prototype.setHeight = function(value){
+    this.h = value;
+    this.connector.y = this.y + this.h;
+}
+
 Shape.prototype.move = function(x, y){
 
     var oldX = this.x;
@@ -163,34 +169,57 @@ Shape.prototype.draw = function(ctx) {
 
     if (this.shape === "square"){
 	offsetX = 15;
-	offsetY = this.h/2.0 + 7;
+	offsetY = 30;
     }
     else if (this.shape === "circle"){
 	offsetX = -10;
     }
 
-    ctx.font="14px Avenir";
-    ctx.fillText(text, this.x + offsetX, this.y + offsetY);
+    //ctx.font="14px Avenir";
+    //ctx.fillText(text, this.x + offsetX, this.y + offsetY);
     //var metrics = ctx.measureText(text);
     //var width = metrics.width;
-
+    this.wrapText(ctx, text, this.x + offsetX, this.y + offsetY, 100, 20);
 
 }
 
 Shape.prototype.setText = function(text, ctx) {
 
     this.text = text;
+    console.log(this.text);
+    console.log(this.text.split('\n'));
 
     /* sets the size dependent on text content - 
        issue, need to get the CTX in order to determine
        the proper dimensions for it */
 
     ctx.font="14px Avenir";
-    ctx.fillText(text, this.x, this.y);
-    var metrics = ctx.measureText(text);
-    var width = metrics.width;
+    //ctx.fillText(text, this.x, this.y);
 
-    this.setWidth(width + 30);
+    var lines = text.split('\n');
+    var lineHeight = 20;
+    var maxHeight = 0;
+
+    var maxWidth = 0;
+
+    for (i in lines){
+	var line = lines[i];
+	var metrics = ctx.measureText(line);
+	var width = metrics.width;
+
+	if (width > maxWidth)
+	    maxWidth = width;
+	maxHeight += lineHeight;
+    }
+    
+    this.setWidth(maxWidth + 30);
+    this.setHeight(maxHeight + 35);
+    //this.wrapText(ctx, text, this.x + offsetX, this.y + offsetY, 100, 20);
+
+    //var metrics = ctx.measureText(text);
+    //var width = metrics.width;
+
+    //this.setWidth(width + 30);
 }
 
 
@@ -209,6 +238,51 @@ Shape.prototype.contains = function(mx, my) {
             (this.y <= my) && (this.y + this.h >= my);
     }
 }
+
+
+Shape.prototype.wrapText = function(context, text, x, y, maxWidth, lineHeight) {
+
+    /* need to rework this... 
+
+       new line needs to happen when enter is pressed in the textarea
+       allow long run ons
+       only add new line when new line is pressed in box
+
+       also need to get the longest element so as to resize the whole box
+
+       */
+       
+    context.font="14px Avenir";
+
+    var lines = text.split('\n');
+    var lineHeight = 20;
+    var height = y;
+
+    var maxWidth = 0;
+
+    for (i in lines){
+	var line = lines[i];
+	//var metrics = context.measureText(line);
+	//var width = metrics.width;
+
+	//if (width > maxWidth)
+	 //   maxWidth = width;
+
+	context.fillText(line, x, height);
+	height += lineHeight;
+    }
+
+    //this.setWidth(maxWidth);
+
+    //reset width AND height (!!) here after max line length
+
+}
+
+
+
+
+
+/////////////////////////////////////////////////////////////////
 
 
 // Connector class, attached to a shape
