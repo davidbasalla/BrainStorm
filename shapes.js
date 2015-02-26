@@ -198,6 +198,8 @@ Shape.prototype.draw = function(ctx) {
 
 Shape.prototype.setText = function(text, ctx) {
 
+    this.text = text;
+
     /* sets the size dependent on text content - 
        issue, need to get the CTX in order to determine
        the proper dimensions for it */
@@ -379,16 +381,45 @@ Modal.prototype.show = function(){
 
 Modal.prototype.setButtonClickEvents = function(){
     
+    console.log('setButtonClickEvents()');
+
     var _this = this;
-    for (i in this.colorButtons){
-	this.colorButtons[i].on(
-	    'click',
-	    function(evt){
-		color = _this.colors[i];
-		_this.setColorBtnActive(_this.colorButtons[i]);
-	    }
-	);
-    }
+    this.colorButtons[0].on(
+	'click',
+	function(evt){
+	    _this.currentColor = _this.colors[0];
+	    _this.setColorBtnActive(_this.colorButtons[0]);
+	}
+    );
+    this.colorButtons[1].on(
+	'click',
+	function(evt){
+	    _this.currentColor = _this.colors[1];
+	    _this.setColorBtnActive(_this.colorButtons[1]);
+	}
+    );
+    this.colorButtons[2].on(
+	'click',
+	function(evt){
+	    _this.currentColor = _this.colors[2];
+	    _this.setColorBtnActive(_this.colorButtons[2]);
+	}
+    );
+    this.colorButtons[3].on(
+	'click',
+	function(evt){
+	    _this.currentColor = _this.colors[3];
+	    _this.setColorBtnActive(_this.colorButtons[3]);
+	}
+    );
+    this.colorButtons[4].on(
+	'click',
+	function(evt){
+	    _this.currentColor = _this.colors[4];
+	    _this.setColorBtnActive(_this.colorButtons[4]);
+	}
+    );
+
 }
 
 
@@ -419,6 +450,8 @@ Modal.prototype.setColor = function(fill){
 
 Modal.prototype.setColorBtnActive = function(button){
     
+    console.log('setColorBtnActive');
+
     for (i in this.colorButtons)
 	this.colorButtons[i].removeClass('color-box-selected');
     button.addClass('color-box-selected');
@@ -432,17 +465,21 @@ Modal.prototype.setCallback = function(state, node, ctx){
 	'click',
 	function(evt)
 	{
-
-	    console.log('TEXT:');
-	    console.log(_this.jqTextField.val());
 	    node.setText(_this.jqTextField.val(), ctx);
 	    node.fill = _this.currentColor;
 	    _this.jqModal.modal('hide');
+
 	    state.valid = false; // Something's dragging so we must redraw
+
+	    _this.resetCallback();
 	}
     );
 }    
 
+
+Modal.prototype.resetCallback = function(){
+    this.jqOkButton.off();
+}
 
 
 
@@ -562,8 +599,6 @@ function CanvasState(canvas) {
 	    //check the connectors first
 	    if (shapes[i].connector.contains(mx, my)){
 
-		console.log('found connector');
-		
 		var mySel = new Connection(shapes[i]);
 		myState.connectionDragging = true;
 		myState.connectionSelection = mySel;
@@ -664,9 +699,7 @@ function CanvasState(canvas) {
 	if (myState.connectionSelection){
 
 	    if (myState.hoverSelection){
-		console.log('make connection');
 		myState.connectionSelection.destShape = myState.hoverSelection;
-
 		myState.connections.push(myState.connectionSelection); 
 
 	    }
@@ -722,8 +755,6 @@ CanvasState.prototype.addShape = function(shape) {
 
 
 CanvasState.prototype.deleteShape = function(shape) {
-
-    console.log('deleteShape()');
 
     //FIRST REMOVE CONNECTIONS
     for(var i = this.connections.length - 1; i >= 0; i--) {
@@ -853,8 +884,6 @@ CanvasState.prototype.getMouse = function(e) {
 //init();
 
 function init() {
-    console.log("init");
-    
     var s = new CanvasState(document.getElementById('canvas1'));
     s.addShape(new Shape(40,40)); // The default is gray
     s.addShape(new Shape(60,140, "square", "testingThis..."));
@@ -867,10 +896,6 @@ function init() {
 	function(evt)
 	{
 	    //SAVE THE DATA AS JSON FORMAT HERE...
-
-	    console.log(s);
-	    console.log(s.shapes);
-	    
 
 	    var combinedText = {
 		shapes: s.shapes,
@@ -904,7 +929,6 @@ function init() {
 	'click',
 	function(evt)
 	{
-	    console.log('LOADING FILE...');
 	    //trigger the hidden fileLoader
 	    $('#filePicker', this.el).trigger('click');
 	    event.stopPropagation(); 
@@ -915,8 +939,6 @@ function init() {
 	'change',
 	function(e)
 	{
-	    console.log('FILE LOADED...');
-	    
 	    var file = e.currentTarget.files[0];
 	    var extension = file.name.split('.').pop();	    
 	    
@@ -935,9 +957,6 @@ function init() {
 		reader.onload = function(event){
 		    
 		    //parse JSON
-		    console.log('AnnotationView.parseJSON()');
-		    console.log(reader.result);
-
 		    var jsonContents = JSON.parse(reader.result);
 
 		    
@@ -951,7 +970,6 @@ function init() {
 			shape.shapeId = elem.shapeId;
 			shape.h = elem.h;
 			shape.setWidth(elem.w);
-			console.log(elem.fill);
 			shape.fill = elem.fill;
 
 			//update the current shape id
@@ -965,8 +983,6 @@ function init() {
 
 		    var connections = jsonContents.connections;
 
-		    console.log('CONNECTIONS:');
-		    console.log(connections);
 
 		    for(var i = 0; i < connections.length; i++){
 
@@ -977,12 +993,7 @@ function init() {
 			var origShape = null;
 			for (index in s.shapes){
 
-			    console.log(s.shapes[index].shapeId);
-			    console.log(connections[i].origShape.shapeId);
-
-
 			    if (s.shapes[index].shapeId === connections[i].origShape.shapeId){
-				console.log('FOUND 1');
 				origShape = s.shapes[index];
 				break;
 			    }
@@ -991,7 +1002,6 @@ function init() {
 			var destShape = null;
 			for (index in s.shapes){
 			    if (s.shapes[index].shapeId === connections[i].destShape.shapeId){
-				console.log('FOUND 2');
 				destShape = s.shapes[index];
 				break;
 			    }
@@ -999,7 +1009,6 @@ function init() {
 
 
 			if (destShape && origShape){
-			    console.log('ADDING CONNECTION');
 			    var connec = new Connection(origShape, destShape);
 			    s.connections.push(connec);
 			}
