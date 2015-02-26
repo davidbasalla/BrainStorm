@@ -1,8 +1,11 @@
 #myModal {
     position: absolute;
-    top:0%;
+    top:0px;
     right:0px;
-    margin-left: -1000px;
+    margin-left: 0px;
+    margin-right: 0px;
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
 .color-box {    
     display: inline-block;

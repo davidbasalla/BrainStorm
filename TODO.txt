@@ -12,10 +12,14 @@ ability to zoom/pan?
 =========
 
 Multiple select and move?
-Color edit?
 Shape edit?
 be able to delete connection
 be able to reassign connection
 hook up keyboard shortcuts!
 ZOOM!
 copy paste cut
+
+
+
+check Canvas editTrigger
+check for connections against itself!!!

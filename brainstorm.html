@@ -35,7 +35,7 @@
       <ul>
         <li class="pure-menu-selected" id="loadButton"><a href="#">Load</a></li>
         <li><a href="#" id="saveAsButton">Save</a></li>
-        <li><a href="#">About</a></li>
+        <li><a href="#" id="aboutButton">About</a></li>
       </ul>
     </div>
 
@@ -55,8 +55,12 @@
 
 
             <p>
-	      <input type="text" name="nodeText" id="nodeText"
-		     value="nodeText">
+	      <!--<input type="text" name="nodeText" id="nodeText"
+		     value="nodeText">-->
+	      <textarea cols="35" rows="2" id="nodeText"></textarea>
+
+
+
 	    </p>
 
 
@@ -105,13 +109,55 @@
     </div><!-- /.modal -->
 
 
+
+    <!-- ABOUT Modal -->
+    <div class="modal" id="aboutModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+	<div class="modal-content">
+	  <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel">About</h4>
+	  </div>
+	  <div class="modal-body">
+
+	    A light weight application for creating mind maps for
+	    brain storming, built with JavaScript, HTML5 Canvas,
+	    Twitter Bootstrap and Pure. Extended from cool 
+
+	    <h2> Instructions </h2>
+
+	    Double-click on empty space to create a Node. <br><br>
+
+	    Click to select a Node.
+
+	    Select and drag to move a Node. <br><br>
+
+	    Double-click on a Node to edit text and color.<br><br>
+
+	    Click on the small black box below a Node and drag to create a
+	    Connection. Drag the connection over another Node to
+	    complete a Connection. <br><br>
+
+	    Click the 'x' on a Node to delete it.<br><br>
+
+	  </div>
+	  <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	  </div>
+	</div>
+      </div>
+    </div>
+    
+
+
+
     <canvas id="canvas1" width="800" height="600">
       This text is displayed if your browser does not support HTML5 Canvas.
     </canvas>
 
 
    <!-- HIDDEN FILE PICKER -->
-    <input type="file" name="xmlInput" id="filePicker">
+    <input type="file" name="xmlInput" id="filePicker" style="display: none;">
     
     <!-- HIDDEN DOWNLOAD LINK -->
     <a download="brainStorm.json" id="downloadlink" style="display: none">Download</a>

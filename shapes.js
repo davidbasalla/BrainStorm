@@ -100,9 +100,6 @@ Shape.prototype.highlight = function(ctx, mode) {
 }
 
 
-
-
-
 // Draws this shape to a given context
 Shape.prototype.draw = function(ctx) {
 
@@ -151,23 +148,7 @@ Shape.prototype.draw = function(ctx) {
 		     this.connector.w, 
 		     this.connector.w);
 
-
-	//DRAW THE DELETE BOX
-
-	/*
-	ctx.fillRect(this.x + this.w - 20, 
-		     this.y, 
-		     20, 
-		     20);
-		     */
-
-
 	this.deleteBox.draw(ctx);
-
-
-
-	
-	
     }
     
 
@@ -254,7 +235,7 @@ Connector.prototype.contains = function(mx, my) {
 
 
 
-
+////////////////////////////////////////////////////////////////////////////
 
 function Connection(origShape, destShape){
 
@@ -315,6 +296,10 @@ Connection.prototype.resetTarget = function() {
 }
 
 
+
+////////////////////////////////////////////////////////////////////////////
+
+
 function DeleteBox(x, y){
     
     this.x = x;
@@ -349,6 +334,9 @@ DeleteBox.prototype.draw = function(ctx){
     ctx.closePath();
     ctx.stroke();
 }
+
+
+////////////////////////////////////////////////////////////////////////////
 
 
 function Modal(){
@@ -482,6 +470,30 @@ Modal.prototype.resetCallback = function(){
 }
 
 
+Modal.prototype.setPosition = function(x, y){
+
+    var width = document.body.clientWidth;
+    console.log(width);
+    console.log(x);
+    //console.log(y);
+
+    var val = width/2 - x;
+
+    //this.jqModal.css( "margin-left", -val); 
+    //this.jqModal.css( "margin-right", val); 
+
+
+    var doc = document.documentElement;
+    var top = (window.pageYOffset || doc.scrollTop)  - (doc.clientTop || 0);
+
+    console.log(top);
+    this.jqModal.css( "top", top); 
+    this.jqModal.css( "margin-bottom", -top); 
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////
 
 
 function CanvasState(canvas) {
@@ -489,7 +501,7 @@ function CanvasState(canvas) {
   
     this.canvas = canvas;
     this.canvas.width = document.body.clientWidth; //document.width is obsolete
-    this.canvas.height = document.body.clientHeight; //document.height is obsolete
+    this.canvas.height = document.body.clientHeight * 2; //document.height is obsolete
 
 
     //this.canvas.width = 8000;
@@ -725,6 +737,7 @@ function CanvasState(canvas) {
 
 	if (myState.selection){
 
+	    myState.modal.setPosition(mouse.x, mouse.y);
 	    myState.modal.setNode(myState.selection);
 	    myState.modal.setCallback(myState, myState.selection, _ctx);
 	    myState.modal.show();
@@ -890,6 +903,19 @@ function init() {
     // Lets make some partially transparent
     //s.addShape(new Shape(80,150,'circle','Notiz'));
     s.addShape(new Shape(125,80));
+
+
+    $('#aboutButton').on(
+	'click',
+	function(evt)
+	{
+	    var modal = $('#aboutModal');
+
+	    modal.modal('show');
+	}
+    );
+
+
 
     $('#saveAsButton').on(
 	'click',
