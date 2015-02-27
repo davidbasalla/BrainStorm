@@ -53,27 +53,36 @@ Shape.prototype.setHeight = function(value){
 
 Shape.prototype.move = function(x, y){
 
+    //rejig to move everything as an offset
+    //vector based...?
+
+    this.x += x;
+    this.y += y;
+
+    
+    /*
     var oldX = this.x;
     var oldY = this.y;
     this.x = x;
     this.y = y;
     offsetX = this.x - oldX;
     offsetY = this.y - oldY;
+    */
+
 
     var connectorOldX = this.connector.x;
     var connectorOldY = this.connector.y;
     var connectorOldTargetX = this.connector.targetX;
     var connectorOldTargetY = this.connector.targetY;
 
-    this.connector.x = connectorOldX + offsetX;
-    this.connector.y = connectorOldY + offsetY;
-    this.connector.targetX = connectorOldTargetX + offsetX;
-    this.connector.targetY = connectorOldTargetY + offsetY;
+    this.connector.x += x;
+    this.connector.y += y;
+    this.connector.targetX += x; 
+    this.connector.targetY += y;
 
-    var deleteBoxOldX = this.deleteBox.x;
-    var deleteBoxOldY = this.deleteBox.y;
-    this.deleteBox.x = deleteBoxOldX + offsetX;
-    this.deleteBox.y = deleteBoxOldY + offsetY;
+    this.deleteBox.x += x;
+    this.deleteBox.y += y;
+
 }
 
 
@@ -230,15 +239,31 @@ Shape.prototype.contains = function(mx, my) {
 
     //need to extend for circle code
 
-    if (this.shape === "circle"){
-	return Math.pow(mx - this.x, 2) + Math.pow(my - this.y, 2) < Math.pow(this.w/2, 2);
-    }
-
-    else if (this.shape === "square"){
+    if (this.shape === "square"){
 	return  (this.x <= mx) && (this.x + this.w >= mx) &&
             (this.y <= my) && (this.y + this.h >= my);
     }
 }
+
+Shape.prototype.containedInRect = function(points) {
+
+    var x1 = Math.min(this.x, this.x + this.w);
+    var y1 = Math.min(this.y, this.y + this.h);
+    var x2 = Math.max(this.x, this.x + this.w);
+    var y2 = Math.max(this.y, this.y + this.h);
+
+    var rect_x1 = Math.min(points[0], points[2]);
+    var rect_y1 = Math.min(points[1], points[3]);
+    var rect_x2 = Math.max(points[0], points[2]);
+    var rect_y2 = Math.max(points[1], points[3]);
+
+    if (x1 < rect_x2 && x2 > rect_x1 &&
+	y1 < rect_y2 && y2 > rect_y1) 
+	return true;
+
+    return false;
+}
+
 
 
 Shape.prototype.wrapText = function(context, text, x, y, maxWidth, lineHeight) {
@@ -436,8 +461,6 @@ Modal.prototype.show = function(){
 
 Modal.prototype.setButtonClickEvents = function(){
     
-    console.log('setButtonClickEvents()');
-
     var _this = this;
     this.colorButtons[0].on(
 	'click',
@@ -505,8 +528,6 @@ Modal.prototype.setColor = function(fill){
 
 Modal.prototype.setColorBtnActive = function(button){
     
-    console.log('setColorBtnActive');
-
     for (i in this.colorButtons)
 	this.colorButtons[i].removeClass('color-box-selected');
     button.addClass('color-box-selected');
@@ -599,13 +620,16 @@ function CanvasState(canvas) {
     this.connections = [];  // the collection of things to be drawn
     this.dragging = false; // Keep track of when we are dragging
     // the current selected object. In the future we could turn this into an array for multiple selection
-    this.selection = null;
-    this.hoverSelection = null;
+    this.selection = [];
+    this.hoverSelection = [];
     this.connectionSelection = null;
     this.dragSelect = false;
 
     this.dragoffx = 0; // See mousedown and mousemove events for explanation
     this.dragoffy = 0;
+    this.mx = 0;
+    this.my = 0;
+
     
     // **** Then events! ****
     
@@ -633,39 +657,8 @@ function CanvasState(canvas) {
 	var mx = mouse.x;
 	var my = mouse.y;
 
-
-	if (!myState.hoverSelection){
-	    myState.dragSelect = true;
-	    myState.dragSelectCoords = [mx, my, mx, my];
-	    return;
-	}
-
-
-	// HOVER SELECTION ////
-
-	if (myState.hoverSelection){
-
-	    mySel = myState.hoverSelection;
-
-	    //check for deleteBox
-
-	    if (myState.hoverSelection.deleteBox.contains(mx, my)){
-		myState.deleteShape(mySel);
-		myState.hoverSelection = null;
-		myState.selection = null;
-		myState.valid = false;
-		return;
-	    }
-
-	    myState.selection = mySel;
-	    myState.dragoffx = mx - mySel.x;
-	    myState.dragoffy = my - mySel.y;
-
-	    myState.dragging = true;
-	    myState.valid = false;
-	    return;
-	}
-
+	myState.mx = mouse.x;
+	myState.my = mouse.y;
 
 
 	// CHECK FOR CONNECTORS ///////
@@ -687,14 +680,59 @@ function CanvasState(canvas) {
 	}
 
 
-	// IF SELECTION ////////////
-	if (myState.selection) {
-	    if (!myState.selection.contains(mx, my)){
+	// 0.) if selection and no hover, clear the selection
+	if (!myState.hoverSelection.length && myState.selection.length){
+	    myState.selection = [];
+	}
 
-		myState.selection = null;
-		myState.valid = false; // Need to clear the old selection border
-		}
+
+	// 1.) if no hoverSelection, start a drag select
+	if (!myState.hoverSelection.length){
+	    myState.dragSelect = true;
+	    myState.dragSelectCoords = [mx, my, mx, my];
+	    return;
+	}
+
+	// 2.) if hoverSelection, check for delete
+	if (myState.hoverSelection.length){
+
+	    mySel = myState.hoverSelection[0];
+
+	    //check for deleteBox
+
+	    if (mySel.deleteBox.contains(mx, my)){
+		myState.deleteShape(mySel);
+		myState.hoverSelection = [];
+		myState.selection = [];
+		myState.valid = false;
+		return;
 	    }
+
+	    //if hoverSel not in sel
+	    //     clear sel
+	    //     add hoverSel to sel
+	    
+
+	    if (myState.selection.indexOf(mySel) == -1){
+
+		myState.selection = [];
+		if(!myState.selection.length)
+		    myState.selection.push(mySel);
+	    }
+	}
+
+	if (myState.hoverSelection.length && myState.selection.length){
+	    //myState.dragoffx = mx - mySel.x;
+	    //myState.dragoffy = my - mySel.y;
+
+	    myState.dragging = true;
+	    myState.valid = false;
+	    return;
+	}
+
+
+
+
     }, true);
 
     canvas.addEventListener('mousemove', function(e) {
@@ -706,26 +744,63 @@ function CanvasState(canvas) {
 	var mx = mouse.x;
 	var my = mouse.y;
 
-	//process drag selection
-	if (myState.dragSelect === true){
+	if(!myState.mx)
+	    myState.mx  = mouse.x;
+	if(!myState.my)
+	    myState.my  = mouse.y;
+
+	var x_diff = mouse.x - myState.mx;
+	var y_diff = mouse.y - myState.my;
+
+	myState.mx = mouse.x;
+	myState.my = mouse.y;
+
+
+	//if drag in process...
+	if (myState.dragging){
+	    
+	    for (i in myState.selection){
+		myState.selection[i].move(x_diff, y_diff);
+	    }
+	    
+	    //myState.selection.x = mouse.x - myState.dragoffx;
+	    //myState.selection.y = mouse.y - myState.dragoffy;   
+	    myState.valid = false; // Something's dragging so we must redraw
+	    return;
+	}
+
+
+	//if dragSelect in process...
+	if (myState.dragSelect){
 
 	    //set the coords
 	    myState.dragSelectCoords[2] = mx;
 	    myState.dragSelectCoords[3] = my;
 	    myState.valid = false;
 
+
 	    // put detection code in here...
+	    var shapes = myState.shapes;
+	    var selectedShapes = [];
 
-	    //work with lists of selected and unselected shapes for better
-	    //performance?
+	    var l = shapes.length;
+	    for (var i = l-1; i >= 0; i--) {
+		
+		if (shapes[i].containedInRect(myState.dragSelectCoords)){
+		    //add to selected shapes
 
-	    //or do a naive implementation first?
+		    if (!selectedShapes.indexOf(shapes[i]) > -1)
+			selectedShapes.push(shapes[i]);
+		}
+	    }
+
+	    myState.hoverSelection = selectedShapes;
 
 	    return;
 	}
 
 	
-	if (!myState.hoverSelection){
+	if (!myState.hoverSelection.length){
 
 	    var shapes = myState.shapes;
 	    var l = shapes.length;
@@ -736,7 +811,7 @@ function CanvasState(canvas) {
 		    // so we can move it smoothly (see mousemove)
 
 		    var mySel = shapes[i];		    
-		    myState.hoverSelection = mySel;
+		    myState.hoverSelection[0] = mySel;
 		    myState.valid = false;
 		    
 		    return;
@@ -746,12 +821,15 @@ function CanvasState(canvas) {
 	//myState.selection = null;
 
 	//check that current object still in mouse range
-	else if (myState.hoverSelection){
-	    if (!myState.hoverSelection.contains(mx, my)){
-		myState.hoverSelection = null;
+	else if (myState.hoverSelection.length){
+	    if (!myState.hoverSelection[0].contains(mx, my)){
+		myState.hoverSelection = [];
 		myState.valid = false;
 	    }
 	}
+
+
+	/////////////
 
 	if (myState.connectionDragging){
 	    var mouse = myState.getMouse(e);
@@ -764,13 +842,10 @@ function CanvasState(canvas) {
 	    }
 
 	else if (myState.dragging){
-	    // We don't want to drag the object by its top-left corner, we want to drag it
-	    // from where we clicked. Thats why we saved the offset and use it here
-	    
-	    
-	    //should wrap this in a function, since we need to move the connector too!
-	    myState.selection.move(mouse.x - myState.dragoffx,
-				   mouse.y - myState.dragoffy);
+
+	    for (i in myState.selection){
+		myState.selection[i].move(x_diff, y_diff);
+		}
 	    
 	    //myState.selection.x = mouse.x - myState.dragoffx;
 	    //myState.selection.y = mouse.y - myState.dragoffy;   
@@ -790,14 +865,22 @@ function CanvasState(canvas) {
 	myState.dragSelect = false;
 	myState.connectionDragging = false;
 
+
+	if (myState.hoverSelection.length){
+	    myState.selection = myState.hoverSelection;
+	}
+
+
+
+
 	//need to clear the selected status and stop drawing the line
 	//myState.selection = null;
 
 	//reset the connector
 	if (myState.connectionSelection){
 
-	    if (myState.hoverSelection){
-		myState.connectionSelection.destShape = myState.hoverSelection;
+	    if (myState.hoverSelection.length){
+		myState.connectionSelection.destShape = myState.hoverSelection[0];
 		myState.connections.push(myState.connectionSelection); 
 
 	    }
@@ -821,11 +904,11 @@ function CanvasState(canvas) {
     canvas.addEventListener('dblclick', function(e) {
 	var mouse = myState.getMouse(e);
 
-	if (myState.selection){
+	if (myState.selection.length){
 
 	    myState.modal.setPosition(mouse.x, mouse.y);
-	    myState.modal.setNode(myState.selection);
-	    myState.modal.setCallback(myState, myState.selection, _ctx);
+	    myState.modal.setNode(myState.selection[0]);
+	    myState.modal.setCallback(myState, myState.selection[0], _ctx);
 	    myState.modal.show();
 	}
 	else
@@ -937,15 +1020,22 @@ CanvasState.prototype.draw = function() {
 	
 	// draw selection
 	// right now this is just a stroke along the edge of the selected Shape
-	if (this.selection != null) {
-	    var mySel = this.selection;
-	    mySel.highlight(ctx, "select");
+
+	//need to convert selection into array
+
+	if (this.selection.length > 0) {
+	    for (i in this.selection){
+		var mySel = this.selection[i];
+		mySel.highlight(ctx, "select");
+	    }
 	}
 	
 	// draw HOVER selection
-	if (this.hoverSelection != null) {
-	    var mySel = this.hoverSelection;
-	    mySel.highlight(ctx, "hover");
+	if (this.hoverSelection.length) {
+	    for (i in this.hoverSelection){
+		var mySel = this.hoverSelection[i];
+		mySel.highlight(ctx, "hover");
+	    }
 	}	
 
     
@@ -1080,8 +1170,8 @@ function init() {
 	    //reset all
 	    s.shapes = [];
 	    s.connections = [];
-	    s.selection = null;
-	    s.hoverSelection = null;
+	    s.selection = [];
+	    s.hoverSelection = [];
 	    s.valid = false;
 		
 	    //check for correct extension
