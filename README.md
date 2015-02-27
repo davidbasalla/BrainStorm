@@ -7,15 +7,17 @@ Features:
     <br>- create nodes
     <br>- delete nodes
     <br>- change node text
-    <br>- change node color (NEW)
+    <br>- change node color
     <br>- create connections
     <br>- save file as JSON
     <br>- load file as JSON
+    <br>- select and drag multiple nodes    
     
     
   WIP:
-    <br>- work on color picker UI
-    <br>- work on node editing (modal placement)
     <br>- delete connections
     <br>- reassign connections
-    <br>- drag select multiple nodes
+    <br>- enable keyboard shortcuts
+    <br>  - Enter on node edit
+    <br>  - Delete on current node
+    <br>- copy and pasting of nodes?
