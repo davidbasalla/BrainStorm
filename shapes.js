@@ -540,9 +540,6 @@ Modal.prototype.resetCallback = function(){
 Modal.prototype.setPosition = function(x, y){
 
     var width = document.body.clientWidth;
-    console.log(width);
-    console.log(x);
-    //console.log(y);
 
     var val = width/2 - x;
 
@@ -553,7 +550,6 @@ Modal.prototype.setPosition = function(x, y){
     var doc = document.documentElement;
     var top = (window.pageYOffset || doc.scrollTop)  - (doc.clientTop || 0);
 
-    console.log(top);
     this.jqModal.css( "top", top); 
     this.jqModal.css( "margin-bottom", -top); 
 }
@@ -569,11 +565,6 @@ function CanvasState(canvas) {
     this.canvas = canvas;
     this.canvas.width = document.body.clientWidth; //document.width is obsolete
     this.canvas.height = document.body.clientHeight * 2; //document.height is obsolete
-
-
-    //this.canvas.width = 8000;
-    //this.canvas.height = 4000;
-
 
     this.width = canvas.width;
     this.height = canvas.height;
@@ -611,6 +602,7 @@ function CanvasState(canvas) {
     this.selection = null;
     this.hoverSelection = null;
     this.connectionSelection = null;
+    this.dragSelect = false;
 
     this.dragoffx = 0; // See mousedown and mousemove events for explanation
     this.dragoffy = 0;
@@ -640,6 +632,13 @@ function CanvasState(canvas) {
 	var mouse = myState.getMouse(e);
 	var mx = mouse.x;
 	var my = mouse.y;
+
+
+	if (!myState.hoverSelection){
+	    myState.dragSelect = true;
+	    myState.dragSelectCoords = [mx, my, mx, my];
+	    return;
+	}
 
 
 	// HOVER SELECTION ////
@@ -706,6 +705,25 @@ function CanvasState(canvas) {
 	var mouse = myState.getMouse(e);
 	var mx = mouse.x;
 	var my = mouse.y;
+
+	//process drag selection
+	if (myState.dragSelect === true){
+
+	    //set the coords
+	    myState.dragSelectCoords[2] = mx;
+	    myState.dragSelectCoords[3] = my;
+	    myState.valid = false;
+
+	    // put detection code in here...
+
+	    //work with lists of selected and unselected shapes for better
+	    //performance?
+
+	    //or do a naive implementation first?
+
+	    return;
+	}
+
 	
 	if (!myState.hoverSelection){
 
@@ -769,6 +787,7 @@ function CanvasState(canvas) {
 
 
 	myState.dragging = false;
+	myState.dragSelect = false;
 	myState.connectionDragging = false;
 
 	//need to clear the selected status and stop drawing the line
@@ -927,11 +946,29 @@ CanvasState.prototype.draw = function() {
 	if (this.hoverSelection != null) {
 	    var mySel = this.hoverSelection;
 	    mySel.highlight(ctx, "hover");
-	}
-	
-	
-    }
+	}	
+
     
+	//draw selection box
+	if (this.dragSelect){
+
+	    var dragX = this.dragSelectCoords[0];
+	    var dragY = this.dragSelectCoords[1];
+	    var mx = this.dragSelectCoords[2];
+	    var my = this.dragSelectCoords[3];
+	    
+	    ctx.lineWidth = 2;
+	    ctx.strokeStyle = 'lightgrey';
+	    ctx.beginPath();
+	    ctx.moveTo(dragX, dragY);
+	    ctx.lineTo(dragX, my);
+	    ctx.lineTo(mx, my);
+	    ctx.lineTo(mx, dragY);
+	    ctx.lineTo(dragX, dragY);
+	    ctx.closePath();
+	    ctx.stroke();
+	}
+    }
     
     // ** Add stuff you want drawn on top all the time here **
     this.valid = true;
