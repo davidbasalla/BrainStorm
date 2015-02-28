@@ -391,8 +391,6 @@ Connection.prototype.draw = function(ctx){
 
 Connection.prototype.contains = function(mx, my){
 
-    console.log('chck');
-
     /* should probably clean this up a little bit */
 
     //figure out the points
@@ -411,8 +409,6 @@ Connection.prototype.contains = function(mx, my){
 
 	//need to find a way to deal with big numbers!!!
 
-	console.log('chck2');
-
 	var x1 = this.origShape.centerPos()[0];
 	var y1 = this.origShape.centerPos()[1];
 
@@ -423,38 +419,23 @@ Connection.prototype.contains = function(mx, my){
 	var yDiff = y2 - y1;
 
 
-	//var m = Math.min(yDiff/xDiff, 200);
+
 	var m = yDiff/xDiff;
-	console.log('m = ' + m);
 
-	//current method of catching the extreme verticals
-	// and horizontals, need to improve this...
-
-	/*
-	if (m < 0.1 && m > -0.1)
-	    return true;
-	else if (m > 8 || m < -8)
-	    return true;
-	    */
-
-
+	//equation of a line
 	var d = y1 - m * x1;
 
 	//figure out the compensator
-	//figure out the distance from 1...
 
 	var val = m * mx + d - my;
-	console.log('val = ' + val);
 
+	//invert values below 1
 	if (m < 1 && m >= 0)
 	    m = Math.pow(m, -1);
 	if (m > -1 && m < 0)
 	    m = Math.pow(m, -1);
 
-
 	eps = Math.abs(eps * m);
-
-	console.log('eps = ' + eps);
 
 	if (val < eps && 
 	    val > -(eps))
@@ -502,10 +483,10 @@ Connection.prototype.resetTarget = function() {
 
 Connection.prototype.removeClosestShape = function(mx, my) {
 
-    var x1 = this.origShape.x;
-    var y1 = this.origShape.y;
-    var x2 = this.destShape.x;
-    var y2 = this.destShape.y;
+    var x1 = this.origShape.centerPos()[0];
+    var y1 = this.origShape.centerPos()[1];
+    var x2 = this.destShape.centerPos()[0];
+    var y2 = this.destShape.centerPos()[1];
 
     //a^2 + b^2 = c^2
 
@@ -516,6 +497,7 @@ Connection.prototype.removeClosestShape = function(mx, my) {
     var a2 = Math.pow(mx - x2, 2);
     var b2 = Math.pow(my - y2, 2);
     var c2 = a2 + b2;
+
 
     if (c2 > c1){
 	//remove origShape
@@ -1029,8 +1011,6 @@ function CanvasState(canvas) {
 	/////////////
 
 	if (myState.connectionDragging){
-	    console.log('connectionDragging');
-
 
 	    var mouse = myState.getMouse(e);
 
