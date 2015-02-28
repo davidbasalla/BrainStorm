@@ -1246,11 +1246,20 @@ CanvasState.prototype.getMouse = function(e) {
 
 function init() {
     var s = new CanvasState(document.getElementById('canvas1'));
-    s.addShape(new Shape(40,40)); // The default is gray
-    s.addShape(new Shape(60,140, "square", "testingThis..."));
-    // Lets make some partially transparent
-    //s.addShape(new Shape(80,150,'circle','Notiz'));
-    s.addShape(new Shape(125,80));
+
+    var shape1 = new Shape(100, 150);
+    var shape2 = new Shape(300, 150, "square", "text");
+    var shape3 = new Shape(200, 50);
+
+    var connec = new Connection(shape3, shape2);
+    var connec2 = new Connection(shape3, shape1);
+
+    s.addShape(shape1);
+    s.addShape(shape2);
+    s.connections.push(connec);
+    s.connections.push(connec2);
+    s.addShape(shape3);
+
 
 
     $('#aboutButton').on(
