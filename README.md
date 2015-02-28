@@ -12,11 +12,9 @@ Features:
     <br>- save file as JSON
     <br>- load file as JSON
     <br>- select and drag multiple nodes    
-    
+    <br>- editable connections    
     
   WIP:
-    <br>- delete connections
-    <br>- reassign connections
     <br>- enable keyboard shortcuts
     <br>  - Enter on node edit
     <br>  - Delete on current node

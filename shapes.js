@@ -19,7 +19,7 @@ function Shape(x, y, shape, text) {
     this.x = x || 0;
     this.y = y || 0;
 
-    this.text = text || "sample text";
+
     this.shape = shape || "square";
     this.fill = '#EEEEEE';
     this.lineWidth = 1;
@@ -37,6 +37,10 @@ function Shape(x, y, shape, text) {
 				   10);
 
     this.deleteBox = new DeleteBox(this.x + this.w - 14, y);
+
+    this.text = text || 'sampleText';
+    //this.setText(text);
+
 }
 
 Shape.prototype.setWidth = function(value){
@@ -387,9 +391,13 @@ Connection.prototype.draw = function(ctx){
 
 Connection.prototype.contains = function(mx, my){
 
+    console.log('chck');
+
     /* should probably clean this up a little bit */
 
     //figure out the points
+
+    var eps = 4;
 
     var x1 = Math.min(this.origShape.centerPos()[0], this.destShape.centerPos()[0]);
     var y1 = Math.min(this.origShape.centerPos()[1], this.destShape.centerPos()[1]);
@@ -398,8 +406,12 @@ Connection.prototype.contains = function(mx, my){
     var y2 = Math.max(this.origShape.centerPos()[1], this.destShape.centerPos()[1]);
 
     //first, check if mouse is in the rectangle described by the 2 points...
-    if ((x1 <= mx) && (x2 >= mx) && (y1 <= my) && (y2 >= my)){
+    if ((x1 <= mx + eps) && (x2 >= mx - eps) && (y1 <= my + eps) && (y2 >= my - eps)){
 	//define the definition of the line
+
+	//need to find a way to deal with big numbers!!!
+
+	console.log('chck2');
 
 	var x1 = this.origShape.centerPos()[0];
 	var y1 = this.origShape.centerPos()[1];
@@ -410,14 +422,34 @@ Connection.prototype.contains = function(mx, my){
 	var xDiff = x2 - x1;
 	var yDiff = y2 - y1;
 
+
+	//var m = Math.min(yDiff/xDiff, 200);
 	var m = yDiff/xDiff;
-	var d = y1 - m * x1;
+	//console.log('m = ' + m);
 
-	var eps = 4;
-
-	if (m * mx + d - my < eps && m * mx + d - my > -(eps))
+	//current method of catching the extreme verticals
+	// and horizontals, need to improve this...
+	if (m < 0.1 && m > -0.1)
+	    return true;
+	else if (m > 8 || m < -8)
 	    return true;
 
+
+	var d = y1 - m * x1;
+
+	//figure out the compensator
+	//figure out the distance from 1...
+
+
+	var val = m * mx + d - my;
+	//console.log('val = ' + val);
+
+
+	//eps = eps * m;
+
+	if (val < eps && 
+	    val > -(eps))
+	    return true;
 	return false;
     }
 }
@@ -1248,8 +1280,9 @@ function init() {
     var s = new CanvasState(document.getElementById('canvas1'));
 
     var shape1 = new Shape(100, 150);
-    var shape2 = new Shape(300, 150, "square", "text");
+    var shape2 = new Shape(300, 150, "square", "sampleText");
     var shape3 = new Shape(200, 50);
+    shape3.fill = 'lightgreen';
 
     var connec = new Connection(shape3, shape2);
     var connec2 = new Connection(shape3, shape1);
