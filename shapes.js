@@ -118,6 +118,18 @@ Shape.prototype.highlight = function(ctx, mode) {
 }
 
 
+Shape.prototype.centerPos = function(){
+
+    var centerPos = [0, 0];
+
+    centerPos[0] = this.x + this.w/2.0;
+    centerPos[1] = this.y + this.h/2.0;
+
+    return centerPos;
+
+}
+
+
 // Draws this shape to a given context
 Shape.prototype.draw = function(ctx) {
 
@@ -349,16 +361,16 @@ function Connection(origShape, destShape){
 
 
 Connection.prototype.draw = function(ctx){
-
+    
     /* draw a line either between two shapes or between the original shape
        and a target position */
-
-    origX = this.origShape.x + this.origShape.w/2.0;
-    origY = this.origShape.y + this.origShape.h/2.0;
-
+    
+    origX = this.origShape.centerPos()[0];
+    origY = this.origShape.centerPos()[1];
+    
     if (this.destShape){
-	destX = this.destShape.x + this.destShape.w/2.0;
-	destY = this.destShape.y  + this.destShape.h/2.0;
+	destX = this.destShape.centerPos()[0];
+	destY = this.destShape.centerPos()[1];
     }
     else {
 	destX = this.targetX;
@@ -370,6 +382,64 @@ Connection.prototype.draw = function(ctx){
     ctx.lineTo(destX, destY);
     ctx.stroke();
     ctx.closePath();
+    
+}
+
+Connection.prototype.contains = function(mx, my){
+
+    /* should probably clean this up a little bit */
+
+    //figure out the points
+
+    var x1 = Math.min(this.origShape.centerPos()[0], this.destShape.centerPos()[0]);
+    var y1 = Math.min(this.origShape.centerPos()[1], this.destShape.centerPos()[1]);
+
+    var x2 = Math.max(this.origShape.centerPos()[0], this.destShape.centerPos()[0]);
+    var y2 = Math.max(this.origShape.centerPos()[1], this.destShape.centerPos()[1]);
+
+    //first, check if mouse is in the rectangle described by the 2 points...
+    if ((x1 <= mx) && (x2 >= mx) && (y1 <= my) && (y2 >= my)){
+	//define the definition of the line
+
+	var x1 = this.origShape.centerPos()[0];
+	var y1 = this.origShape.centerPos()[1];
+
+	var x2 = this.destShape.centerPos()[0];
+	var y2 = this.destShape.centerPos()[1];
+
+	var xDiff = x2 - x1;
+	var yDiff = y2 - y1;
+
+	var m = yDiff/xDiff;
+	var d = y1 - m * x1;
+
+	var eps = 4;
+
+	if (m * mx + d - my < eps && m * mx + d - my > -(eps))
+	    return true;
+
+	return false;
+    }
+}
+
+
+Connection.prototype.highlight = function(ctx, mode){
+    
+    origX = this.origShape.centerPos()[0];
+    origY = this.origShape.centerPos()[1];
+    destX = this.destShape.centerPos()[0];
+    destY = this.destShape.centerPos()[1];
+
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = 'red';
+
+    ctx.beginPath();
+    ctx.moveTo(origX, origY)
+    ctx.lineTo(destX, destY);
+    ctx.stroke();
+    ctx.closePath();
+
+    ctx.strokeStyle = 'lightgrey';
 
 }
 
@@ -386,6 +456,41 @@ Connection.prototype.resetTarget = function() {
     this.targetX = this.origShape.connector.x;
     this.targetY = this.origShape.connector.y;
 }
+
+
+Connection.prototype.removeClosestShape = function(mx, my) {
+
+    var x1 = this.origShape.x;
+    var y1 = this.origShape.y;
+    var x2 = this.destShape.x;
+    var y2 = this.destShape.y;
+
+    //a^2 + b^2 = c^2
+
+    var a1 = Math.pow(mx - x1, 2);
+    var b1 = Math.pow(my - y1, 2);
+    var c1 = a1 + b1;
+
+    var a2 = Math.pow(mx - x2, 2);
+    var b2 = Math.pow(my - y2, 2);
+    var c2 = a2 + b2;
+
+    if (c2 > c1){
+	//remove origShape
+	this.origShape = this.destShape;
+	this.destShape = null;
+    }
+    else{
+	this.destShape = null;
+    }
+    
+    //reset the target points...
+    this.targetX = mx;
+    this.targetY = my;
+    
+}
+
+
 
 
 
@@ -661,6 +766,35 @@ function CanvasState(canvas) {
 	myState.my = mouse.y;
 
 
+	// CHECK FOR CONNECTIONS ///////
+	if (myState.hoverSelection.length){
+	    if (myState.hoverSelection[0] instanceof Connection){
+
+		//figure out closer shape...
+		var mySel = myState.hoverSelection[0];
+
+		mySel.removeClosestShape(mx, my);
+
+		myState.connectionDragging = true;
+		myState.connectionSelection = mySel;
+
+		myState.hoverSelection = [];
+
+		//remove current connection from connections
+		var index = myState.connections.indexOf(mySel);
+		if(index > -1)
+		    myState.connections.splice(index, 1);
+
+		myState.valid = false;		
+
+		return;
+	    }
+	}
+	
+
+
+
+
 	// CHECK FOR CONNECTORS ///////
 
 	var shapes = myState.shapes;
@@ -802,6 +936,27 @@ function CanvasState(canvas) {
 	
 	if (!myState.hoverSelection.length){
 
+	    //check for connections...
+
+	    if(!myState.connectionDragging){
+		var cons = myState.connections;
+		for (var i = cons.length-1; i >= 0; i--) {
+		    
+		    var val = cons[i].contains(mx, my);
+		    if (val) {
+			// Keep track of where in the object we clicked
+			// so we can move it smoothly (see mousemove)
+			
+			var mySel = cons[i];		    
+			myState.hoverSelection[0] = mySel;
+			myState.valid = false;
+			
+			return;
+		    }
+		}
+	    }
+
+	    //check for shapes!!
 	    var shapes = myState.shapes;
 	    var l = shapes.length;
 	    for (var i = l-1; i >= 0; i--) {
@@ -832,6 +987,9 @@ function CanvasState(canvas) {
 	/////////////
 
 	if (myState.connectionDragging){
+	    console.log('connectionDragging');
+
+
 	    var mouse = myState.getMouse(e);
 
 	    myState.connectionSelection.setTarget(mouse.x, mouse.y);
@@ -906,10 +1064,13 @@ function CanvasState(canvas) {
 
 	if (myState.selection.length){
 
-	    myState.modal.setPosition(mouse.x, mouse.y);
-	    myState.modal.setNode(myState.selection[0]);
-	    myState.modal.setCallback(myState, myState.selection[0], _ctx);
-	    myState.modal.show();
+	    if(myState.selection[0] instanceof Shape){
+	    
+		myState.modal.setPosition(mouse.x, mouse.y);
+		myState.modal.setNode(myState.selection[0]);
+		myState.modal.setCallback(myState, myState.selection[0], _ctx);
+		myState.modal.show();
+	    }
 	}
 	else
 	    myState.addShape(new Shape(mouse.x - 10, mouse.y - 10));
@@ -982,8 +1143,6 @@ CanvasState.prototype.draw = function() {
 	
 	// ** Add stuff you want drawn in the background all the time here **
 	
-
-
 	// draw all Connections
 
 	ctx.strokeStyle = 'lightgrey';
@@ -994,16 +1153,19 @@ CanvasState.prototype.draw = function() {
 	    //if (con.x > this.width || shape.y > this.height ||
 	    //shape.x + shape.w < 0 || shape.y + shape.h < 0) continue;
 	    connections[i].draw(ctx);
+	    
+	    if (this.hoverSelection.indexOf(connections[i]) > -1){
+		connections[i].highlight(ctx);
+	    }
 	}
 	
 	
 	//draw connector lines
-	
-
 	if (this.connectionSelection != null) {
 	    ctx.strokeStyle = 'red';
 	    var mySel = this.connectionSelection;
 	    mySel.draw(ctx);
+
 	}
 
 	
@@ -1015,30 +1177,17 @@ CanvasState.prototype.draw = function() {
 	    if (shape.x > this.width || shape.y > this.height ||
 		shape.x + shape.w < 0 || shape.y + shape.h < 0) continue;
 	    shapes[i].draw(ctx);
+
+	    if (this.selection.indexOf(shapes[i]) > -1){
+		shapes[i].highlight(ctx, "select");
+	    }
+	    if (this.hoverSelection.indexOf(shapes[i]) > -1){
+		shapes[i].highlight(ctx, "hover");
+	    }
+
 	}
 	
 	
-	// draw selection
-	// right now this is just a stroke along the edge of the selected Shape
-
-	//need to convert selection into array
-
-	if (this.selection.length > 0) {
-	    for (i in this.selection){
-		var mySel = this.selection[i];
-		mySel.highlight(ctx, "select");
-	    }
-	}
-	
-	// draw HOVER selection
-	if (this.hoverSelection.length) {
-	    for (i in this.hoverSelection){
-		var mySel = this.hoverSelection[i];
-		mySel.highlight(ctx, "hover");
-	    }
-	}	
-
-    
 	//draw selection box
 	if (this.dragSelect){
 

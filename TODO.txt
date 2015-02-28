@@ -11,8 +11,6 @@ ability to zoom/pan?
 
 =========
 
-Multiple select and move?
-Shape edit?
 be able to delete connection
 be able to reassign connection
 hook up keyboard shortcuts!
@@ -21,5 +19,10 @@ copy paste cut
 
 
 
-check Canvas editTrigger
 check for connections against itself!!!
+
+
+======
+- need to check against either half of the line...
+  return it in a meaningful way...
+  return as 0, 1, 2?
