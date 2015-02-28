@@ -425,14 +425,17 @@ Connection.prototype.contains = function(mx, my){
 
 	//var m = Math.min(yDiff/xDiff, 200);
 	var m = yDiff/xDiff;
-	//console.log('m = ' + m);
+	console.log('m = ' + m);
 
 	//current method of catching the extreme verticals
 	// and horizontals, need to improve this...
+
+	/*
 	if (m < 0.1 && m > -0.1)
 	    return true;
 	else if (m > 8 || m < -8)
 	    return true;
+	    */
 
 
 	var d = y1 - m * x1;
@@ -440,12 +443,18 @@ Connection.prototype.contains = function(mx, my){
 	//figure out the compensator
 	//figure out the distance from 1...
 
-
 	var val = m * mx + d - my;
-	//console.log('val = ' + val);
+	console.log('val = ' + val);
+
+	if (m < 1 && m >= 0)
+	    m = Math.pow(m, -1);
+	if (m > -1 && m < 0)
+	    m = Math.pow(m, -1);
 
 
-	//eps = eps * m;
+	eps = Math.abs(eps * m);
+
+	console.log('eps = ' + eps);
 
 	if (val < eps && 
 	    val > -(eps))
@@ -471,6 +480,7 @@ Connection.prototype.highlight = function(ctx, mode){
     ctx.stroke();
     ctx.closePath();
 
+    ctx.lineWidth = 4;
     ctx.strokeStyle = 'lightgrey';
 
 }
