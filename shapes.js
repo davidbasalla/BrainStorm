@@ -14,6 +14,7 @@ function Shape(x, y, shape, text) {
   // "x || 0" just means "if there is a value for x, use that. Otherwise use 0."
   // But we aren't checking anything else! We could put "Lalala" for the value of x 
 
+
     this.shapeId = 0;
 
     this.x = x || 0;
@@ -960,8 +961,29 @@ function CanvasState(canvas) {
 	
 	if (!myState.hoverSelection.length){
 
-	    //check for connections...
+	    //check for shapes and connectors!!
+	    var shapes = myState.shapes;
+	    var l = shapes.length;
+	    for (var i = l-1; i >= 0; i--) {
+		
+		//check object
+		if (shapes[i].contains(mx, my)) {
+		    // Keep track of where in the object we clicked
+		    // so we can move it smoothly (see mousemove)
 
+		    var mySel = shapes[i];		    
+		    myState.hoverSelection[0] = mySel;
+		    myState.valid = false;
+		    
+		    return;
+		}
+		
+		//check connector and block other selection
+		var connector = shapes[i].connector;
+		if (shapes[i].connector.contains(mx, my))
+		    return;
+	    }
+	    //check for connections...
 	    if(!myState.connectionDragging){
 		var cons = myState.connections;
 		for (var i = cons.length-1; i >= 0; i--) {
@@ -977,23 +999,6 @@ function CanvasState(canvas) {
 			
 			return;
 		    }
-		}
-	    }
-
-	    //check for shapes!!
-	    var shapes = myState.shapes;
-	    var l = shapes.length;
-	    for (var i = l-1; i >= 0; i--) {
-		
-		if (shapes[i].contains(mx, my)) {
-		    // Keep track of where in the object we clicked
-		    // so we can move it smoothly (see mousemove)
-
-		    var mySel = shapes[i];		    
-		    myState.hoverSelection[0] = mySel;
-		    myState.valid = false;
-		    
-		    return;
 		}
 	    }
 	}
@@ -1061,7 +1066,9 @@ function CanvasState(canvas) {
 
 	    if (myState.hoverSelection.length){
 		myState.connectionSelection.destShape = myState.hoverSelection[0];
-		myState.connections.push(myState.connectionSelection); 
+		myState.addConnection(myState.connectionSelection);
+
+		//myState.connections.push(myState.connectionSelection); 
 
 	    }
 
@@ -1074,6 +1081,10 @@ function CanvasState(canvas) {
 	myState.connectionSelection = null;
 
 	myState.valid = false; // Something's dragging so we must redraw
+
+	//save current state
+	myState.setStorageData('shapes');
+	myState.setStorageData('connections');
 
     }, true);
 
@@ -1111,12 +1122,46 @@ function CanvasState(canvas) {
 }
 
 
+
+
 CanvasState.prototype.addShape = function(shape) {
 
-    shape.shapeId = this.currentShapeId += 1;
+    //conditional shapeId
+    if(!shape.shapeId)
+	shape.shapeId = this.currentShapeId += 1;
+
     this.shapes.push(shape);
     this.valid = false;
+
+    this.setStorageData('shapes');
+    
 }
+
+
+CanvasState.prototype.addConnection = function(connec) {
+
+    this.connections.push(connec);
+    this.setStorageData('connections');
+}
+
+
+CanvasState.prototype.updateConnection = function(connec) {
+    this.setStorageData('connections');
+}
+
+
+CanvasState.prototype.setStorageData = function(attr) {
+
+    var jsonText = null;
+    if (attr == 'shapes')
+	jsonText = JSON.stringify(this.shapes);
+    else if (attr == 'connections')
+	jsonText = JSON.stringify(this.connections);
+
+    localStorage.setItem(attr, jsonText);
+}
+
+
 
 
 CanvasState.prototype.deleteShape = function(shape) {
@@ -1136,15 +1181,10 @@ CanvasState.prototype.deleteShape = function(shape) {
 	if(this.shapes[i] === shape) {
 	    this.shapes.splice(i, 1);
 	    this.valid = false;
+	    this.setStorageData('shapes');
 	    return
 	}
     }
-
-    
-
-
-
-
 }
 
 
@@ -1266,8 +1306,68 @@ CanvasState.prototype.getMouse = function(e) {
 // You could uncomment this init() reference and place the script reference inside the body tag
 //init();
 
-function init() {
-    var s = new CanvasState(document.getElementById('canvas1'));
+
+
+////////////////////////////////////////////////////////////////////////////
+
+function MainApp() {
+    
+    this.s = new CanvasState(document.getElementById('canvas1'));
+    this.s.ctx.lineWidth = 4;
+    
+    //load stored data or default
+    if (!this.loadStorage())
+	this.loadDefault();
+    
+}
+
+MainApp.prototype.clear = function(){
+
+    //delete connections
+    this.s.shapes =[];
+
+    //delete shapes
+    this.s.connections =[];
+
+
+    //reset tmp storage
+    this.selection = [];
+    this.hoverSelection = [];
+    this.connectionSelection = null;
+    this.dragSelect = false;   
+
+    //force redraw
+    this.s.valid = false;
+
+    //update storage
+    this.s.setStorageData('shapes');
+    this.s.setStorageData('connections');
+}
+
+
+MainApp.prototype.loadStorage = function(){
+
+    var val = false;
+
+    var shapes = JSON.parse(localStorage.shapes);
+    var connections = JSON.parse(localStorage.connections);
+
+    if(shapes){
+	this.loadShapes(shapes);
+	val = true;
+    }
+    if(connections){
+	this.loadConnections(connections);
+	val = true;
+    }
+    
+    this.s.valid = false;
+
+    return val;
+}
+
+
+MainApp.prototype.loadDefault = function(){
 
     var shape1 = new Shape(100, 150);
     var shape2 = new Shape(300, 150, "square", "sampleText");
@@ -1277,13 +1377,150 @@ function init() {
     var connec = new Connection(shape3, shape2);
     var connec2 = new Connection(shape3, shape1);
 
-    s.addShape(shape1);
-    s.addShape(shape2);
-    s.connections.push(connec);
-    s.connections.push(connec2);
-    s.addShape(shape3);
+    this.s.addShape(shape1);
+    this.s.addShape(shape2);
+    this.s.connections.push(connec);
+    this.s.connections.push(connec2);
+    this.s.addShape(shape3);
+
+}
 
 
+
+MainApp.prototype.loadShapes = function(shapes){
+
+    for(var i = 0; i < shapes.length; i++){
+	
+	var elem = shapes[i];
+
+	var shape = new Shape(elem.x, elem.y, "square","");
+	shape.setText(elem.text, this.s.ctx)
+	shape.shapeId = elem.shapeId;
+	shape.fill = elem.fill;
+	
+	//update the current shape id
+	this.s.currentShapeId = Math.max(this.s.currentShapeId,
+					 shape.shapeId);
+	
+	this.s.shapes.push(shape);
+    }
+}
+
+MainApp.prototype.loadConnections = function(connections){
+
+    for(var i = 0; i < connections.length; i++){
+	
+	var connection = connections[i];
+	
+	//dont create again, just loop through already existing ones...
+	
+	var origShape = null;
+	for (index in this.s.shapes){
+	    
+	    if (this.s.shapes[index].shapeId === connection.origShape.shapeId){
+		origShape = this.s.shapes[index];
+		this.s.updateConnection(connection);
+		break;
+	    }
+	}
+	
+	var destShape = null;
+	for (index in this.s.shapes){
+	    if (this.s.shapes[index].shapeId === connection.destShape.shapeId){
+		destShape = this.s.shapes[index];
+		this.s.updateConnection(connection);
+		break;
+	    }
+	}
+	
+	
+	if (destShape && origShape){
+	    var connec = new Connection(origShape, destShape);
+	    this.s.addConnection(connec);
+	    
+	}
+    }
+}    
+
+
+
+
+MainApp.prototype.save = function(){
+
+    //SAVE THE DATA AS JSON FORMAT HERE...
+    
+    var combinedText = {
+	shapes: this.s.shapes,
+	connections: this.s.connections
+    };
+    
+    var jsonText = JSON.stringify(combinedText);
+    
+    var data = new Blob([jsonText], {type: 'text/plain'});
+    var textFile = null;
+    
+    // If we are replacing a previously generated file we need to
+    // manually revoke the object URL to avoid memory leaks.
+    if (textFile !== null) {
+	window.URL.revokeObjectURL(textFile);
+    }
+    
+    textFile = window.URL.createObjectURL(data);
+    
+    var link = document.getElementById('downloadlink');
+    link.href = textFile;
+    
+    link.click();
+    
+}   
+
+
+MainApp.prototype.load = function(file){
+
+    var extension = file.name.split('.').pop();	    
+    
+    //reset all
+    this.s.shapes = [];
+    this.s.connections = [];
+    this.s.selection = [];
+    this.s.hoverSelection = [];
+    this.s.valid = false;
+    
+
+    var _this = this;
+    //check for correct extension
+    if(extension == 'json'){
+	// FILE READING
+	var reader = new FileReader();
+	
+	reader.onload = function(event){
+	    
+	    //parse JSON
+	    var jsonContents = JSON.parse(reader.result);
+	    
+	    var shapes = jsonContents.shapes;
+	    _this.loadShapes(shapes);
+
+	    var connections = jsonContents.connections;
+	    _this.loadConnections(connections);
+	    
+	    _this.s.valid = false;
+	}
+	
+	reader.readAsText(file);		
+    }
+}
+
+
+
+
+
+
+
+
+function init() {
+
+    var app = new MainApp();
 
     $('#aboutButton').on(
 	'click',
@@ -1296,37 +1533,21 @@ function init() {
     );
 
 
+    $('#clearButton').on(
+	'click',
+	function(evt)
+	{
+	    app.clear();
+	}
+    );
+
+
 
     $('#saveAsButton').on(
 	'click',
 	function(evt)
 	{
-	    //SAVE THE DATA AS JSON FORMAT HERE...
-
-	    var combinedText = {
-		shapes: s.shapes,
-		connections: s.connections
-	    };
-
-	    var jsonText = JSON.stringify(combinedText);
-
-	    var data = new Blob([jsonText], {type: 'text/plain'});
-	    var textFile = null;
-	    
-	    // If we are replacing a previously generated file we need to
-	    // manually revoke the object URL to avoid memory leaks.
-	    if (textFile !== null) {
-		window.URL.revokeObjectURL(textFile);
-	    }
-	    
-	    textFile = window.URL.createObjectURL(data);
-	    
-	    var link = document.getElementById('downloadlink');
-	    link.href = textFile;
-
-	    link.click();
-
-
+	    app.save();
 	}
     );	
 
@@ -1346,90 +1567,8 @@ function init() {
 	function(e)
 	{
 	    var file = e.currentTarget.files[0];
-	    var extension = file.name.split('.').pop();	    
-	    
-	    //reset all
-	    s.shapes = [];
-	    s.connections = [];
-	    s.selection = [];
-	    s.hoverSelection = [];
-	    s.valid = false;
-		
-	    //check for correct extension
-	    if(extension == 'json'){
-		// FILE READING
-		var reader = new FileReader();
-		
-		reader.onload = function(event){
-		    
-		    //parse JSON
-		    var jsonContents = JSON.parse(reader.result);
-
-		    
-		    //deal with shapes
-
-		    var shapes = jsonContents.shapes;
-		    for(var i = 0; i < shapes.length; i++){
-
-			var elem = shapes[i];
-			var shape = new Shape(elem.x, elem.y, "square");
-			shape.setText(elem.text, s.ctx)
-			shape.shapeId = elem.shapeId;
-			shape.fill = elem.fill;
-
-			//update the current shape id
-			s.currentShapeId = Math.max(s.currentShapeId, shape.shapeId);
-
-			s.shapes.push(shape);
-		    }
-
-
-		    //deal with connections
-
-		    var connections = jsonContents.connections;
-
-
-		    for(var i = 0; i < connections.length; i++){
-
-			var elem = connections[i];
-
-			//dont create again, just loop through already existing ones...
-
-			var origShape = null;
-			for (index in s.shapes){
-
-			    if (s.shapes[index].shapeId === connections[i].origShape.shapeId){
-				origShape = s.shapes[index];
-				break;
-			    }
-			}
-
-			var destShape = null;
-			for (index in s.shapes){
-			    if (s.shapes[index].shapeId === connections[i].destShape.shapeId){
-				destShape = s.shapes[index];
-				break;
-			    }
-			}
-
-
-			if (destShape && origShape){
-			    var connec = new Connection(origShape, destShape);
-			    s.connections.push(connec);
-			}
-		    }
-
-
-		    s.valid = false;
-		}
-
-
-		reader.readAsText(file);		
-	    }
+	    app.load(file);
 	}
     );
     
 }
-
-
-
