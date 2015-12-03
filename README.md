@@ -1,3 +1,7 @@
+Update: Have made this into a rails app with per user sketch saving. Sign in with Facebook.
+http://brainstorming-app.herokuapp.com/
+
+
 This a simple exercise to become more familiar with HTML5 Canvas and working with JavaScript.
 
 Try it here:
